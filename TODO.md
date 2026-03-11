@@ -6,6 +6,15 @@ Où va-t-on à partir d'ici ? Voici les prochaines étapes logiques, allant d'op
 
 ---
 
+## ✅ Jalons Complétés (Réalisés)
+
+* [x] **Refonte Architecturelle** : Transition complète d'un script monolithique vers le standard *Go Canonical Project Layout* (`cmd/cdn`, `internal/config`, `internal/cache`, `internal/processor`, `internal/server`).
+* [x] **Sécurité & Résilience** : Correction des failles path traversal, protection contre les attaques DoS (limite de décodage d'images et Zip Bomb Excel), ajout d'entêtes sécuritaires et fallback transparent sur des `Placeholders` en cas de corruption de fichier source.
+* [x] **Cadrage Intelligent (Smart Crop) & Computer Vision** : Intégration d'un algorithme de recadrage intelligent, et surtout, création du endpoint `/o/portrait/` utilisant la reconnaissance faciale (via réseaux de neurones vectorisés nativement en Go sans CGO avec Pigo) pour toujours centrer avec précision sur le visage.
+* [x] **Support Vectoriel Natif (SVG)** : Rasterisation mathématique dynamique au pixel près des fichiers `.svg` avec du pur Go, ce qui élimine pixellisations et flous tout en permettant un chaînage naturel avec les webp/blur/resize.
+
+---
+
 ## ⚡ 1. Optimisations *Hardcore* (Niveau Machine)
 
 Ces améliorations sont prévues pour passer d'un simple "outil Go rapide" à de la "très haute performance".
@@ -35,11 +44,11 @@ La demande en médias animés est colossale. L'idée est de rajouter une route `
 
 Les PDF représentent un monde à part. Le but, ici, est l'extraction sémantique et visuelle pour des tableaux de bords / blogs.
 
-* [ ] **Génération Automatique de Cover** :
+* [x] **Génération Automatique de Cover** :
     * Transformer la première page d'un PDF dense en une image JPG ou WebP parfaitement optimisée (`GET /o/cover/document.pdf`). Utilisable pour les cartes de partage social (OpenGraph).
-* [ ] **Extracteur Textuel & Synthèse** :
+* [x] **Extracteur Textuel & Synthèse** :
     * À la manière d'Excel, extraire le contenu texte brut du PDF (`GET /o/text/document.pdf`), pour indexer le fichier dans un moteur de recherche tel qu'Elasticsearch ou Meilisearch sans client externe.
-* [ ] **Outils Requis** : On devra s'orienter vers des wrappers C pour `MuPDF` ou `poppler`, ou bien utiliser des libs natives Go partielles (ex: `pdfcpu` ou `unidoc` si les licences sont viables).
+* [x] **Outils Requis** : On devra s'orienter vers des wrappers C pour `MuPDF` ou `poppler`, ou bien utiliser des libs natives Go partielles (ex: `pdfcpu` ou `unidoc` si les licences sont viables).
 
 ---
 

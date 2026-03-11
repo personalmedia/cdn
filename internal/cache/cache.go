@@ -1,13 +1,16 @@
 package cache
 
 import (
+	"bytes"
 	"fmt"
 	"image"
 	"mime"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/disintegration/imaging"
 	lru "github.com/hashicorp/golang-lru/v2"
@@ -181,6 +184,37 @@ func loadSVGAsImage(path string, reqW, reqH int) (image.Image, error) {
 	scanner := rasterx.NewScannerGV(w, h, img, img.Bounds())
 	raster := rasterx.NewDasher(w, h, scanner)
 	icon.Draw(raster, 1.0)
+
+	return img, nil
+}
+
+// GeneratePDFCover uses os/exec to call pdftoppm (poppler-utils) to rasterize
+// the first page of the PDF into an image.Image.
+func GeneratePDFCover(path string) (image.Image, error) {
+	tmpDir := os.TempDir()
+	prefix := fmt.Sprintf("cdn_pdf_cov_%d", time.Now().UnixNano())
+	outPrefix := filepath.Join(tmpDir, prefix)
+	
+	defer func() {
+		os.Remove(outPrefix + "-1.png")
+	}()
+
+	cmd := exec.Command("pdftoppm", "-f", "1", "-l", "1", "-png", path, outPrefix)
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		return nil, fmt.Errorf("pdftoppm failed: %v, stderr: %s. Is poppler-utils installed?", err, stderr.String())
+	}
+
+	imgFile := outPrefix + "-1.png"
+	if _, err := os.Stat(imgFile); os.IsNotExist(err) {
+		return nil, fmt.Errorf("pdftoppm did not produce the expected file: %s", imgFile)
+	}
+
+	img, err := imaging.Open(imgFile)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode generated pdf cover: %w", err)
+	}
 
 	return img, nil
 }

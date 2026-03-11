@@ -21,6 +21,7 @@ var extensionKind = map[string]string{
 	".gif":  "image",
 	".webp": "image",
 	".svg":  "image",
+	".pdf":  "image",
 	".xlsx": "excel",
 }
 
@@ -40,10 +41,17 @@ func RouteProcessor(c *gin.Context) {
 			kind = "image"
 		} else if actionName == "csv" || actionName == "json" {
 			kind = "excel"
+		} else if actionName == "text" {
+			kind = "pdf"
 		} else {
 			c.AbortWithStatus(http.StatusUnsupportedMediaType)
 			return
 		}
+	}
+
+	// Override kind if requesting text extraction specifically
+	if actionName == "text" && ext == ".pdf" {
+		kind = "pdf"
 	}
 
 	w, h := 0, 0
@@ -72,6 +80,8 @@ func RouteProcessor(c *gin.Context) {
 		} else {
 			c.AbortWithStatus(http.StatusBadRequest)
 		}
+	} else if kind == "pdf" && actionName == "text" {
+		processor.HandlePDFText(c, req)
 	} else {
 		c.AbortWithStatus(http.StatusUnsupportedMediaType)
 	}

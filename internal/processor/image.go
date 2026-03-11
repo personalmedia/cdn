@@ -2,6 +2,7 @@ package processor
 
 import (
 	"bytes"
+	"fmt"
 	"image"
 	"image/color"
 	"image/draw"
@@ -11,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/chai2010/webp"
 	"github.com/disintegration/imaging"
@@ -48,6 +50,8 @@ func HandleImageAction(c *gin.Context, req *ActionRequest) {
 
 	if req.Action == "webp" {
 		mimeType = "image/webp"
+	} else if strings.HasSuffix(strings.ToLower(cacheFile), ".pdf") {
+		mimeType = "image/png"
 	}
 
 	if !cache.FileExists(cacheFile) {
@@ -124,8 +128,20 @@ func HandleImageAction(c *gin.Context, req *ActionRequest) {
 			}, nil
 		}
 
-		if err := imaging.Save(dst, cacheFile); err != nil {
-			return nil, err
+		var saveErr error
+		if strings.HasSuffix(strings.ToLower(cacheFile), ".pdf") {
+			tmpPng := cacheFile + ".png"
+			if err := imaging.Save(dst, tmpPng); err == nil {
+				saveErr = os.Rename(tmpPng, cacheFile)
+			} else {
+				saveErr = err
+			}
+		} else {
+			saveErr = imaging.Save(dst, cacheFile)
+		}
+		
+		if saveErr != nil {
+			return nil, saveErr
 		}
 
 		cache.InvalidateMappedFile(cacheFile)
@@ -138,6 +154,7 @@ func HandleImageAction(c *gin.Context, req *ActionRequest) {
 	})
 
 	if err != nil {
+		fmt.Println("HandleImageAction Error:", err)
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
