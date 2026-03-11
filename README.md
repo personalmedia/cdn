@@ -52,7 +52,7 @@ RATE_PER_SEC=100
 `GET /o/:action/*path?{width}x{height}`
 
 * **WebP Conversion**: `GET /o/webp/photo.jpg`
-* **Resize**: `GET /o/resize/photo.png?800x600`
+* **Resize & Smart Crop**: `GET /o/resize/photo.png?800x600` (Automatically detects subjects and uses content-aware smart cropping when aspect ratios change)
 * **Blur**: `GET /o/blur/bg.jpg?1920x1080`
 * *Note: If the source is missing, a neutral placeholder is automatically generated.*
 
