@@ -106,7 +106,12 @@ The cache is structured for easy maintenance:
 
 ## 🛡️ Security & Performance
 
-* **Path Traversal Protection**: All paths are cleaned and strictly restricted to the `SOURCE_DIR`.
+* **Strict Path Traversal Protection**: Validates final absolute paths post-`Join` to ensure isolation within `SOURCE_DIR`.
+* **Image Bomb Mitigation**: Reads image headers to enforce a strict dimension limit (e.g., 8000x8000) before full RAM decoding.
+* **CPU Exhaustion Protection**: Clamps user-requested dimensions to a safe maximum (e.g., 4000x4000) during resizing.
+* **Cache Flooding Prevention**: Limits the number of generated cache variants per image (e.g., max 20) to prevent disk fill attacks.
+* **Excel Zip Bomb Defense**: Enforces a strict XML decompression size limit (250MB) on XLSX files to prevent memory exhaustion.
+* **Rate Limiting & IP Spoofing**: IP-based rate limiter with support for `TRUSTED_PROXIES` behind load balancers.
+* **Security Headers**: Injects `X-Content-Type-Options: nosniff` and `X-Frame-Options: DENY`.
 * **MMap Efficiency**: Cached files are served via memory mapping, reducing system calls and memory copying.
 * **Aggressive Caching**: Headers include `public, max-age=31536000, immutable`.
-* **Auto-Cleanup**: IP limiters are automatically garbage-collected to save memory.

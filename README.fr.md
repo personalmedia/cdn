@@ -109,7 +109,12 @@ Le cache est organisé par action et dimensions pour permettre des purges chirur
 
 ## 🛡️ Sécurité & Performance
 
-* **Protection Path Traversal** : Tous les chemins sont nettoyés (`filepath.Clean`) et validés.
+* **Protection Path Traversal Stricte** : Validation du chemin absolu après `Join` pour garantir l'isolation stricte dans `SOURCE_DIR`.
+* **Mitigation des Image Bombs** : Lecture de l'en-tête (header) pour limiter les dimensions (ex: 8000x8000) avant le décodage complet en RAM.
+* **Protection CPU (Resize)** : Plafonnement des dimensions demandées par l'utilisateur à un maximum sûr (ex: 4000x4000).
+* **Prévention du Cache Flooding** : Limitation du nombre de variantes générées par image (ex: 20 max) pour éviter la saturation du disque.
+* **Défense Excel Zip Bomb** : Limite stricte de la taille de décompression XML (250MB) pour les fichiers XLSX.
+* **Rate Limiting & IP Spoofing** : Limiteur de requêtes par IP avec support de `TRUSTED_PROXIES` pour les configurations derrière inverse-proxy.
+* **Headers de Sécurité** : Injection automatique de `X-Content-Type-Options: nosniff` et `X-Frame-Options: DENY`.
 * **Efficacité MMap** : Les fichiers du cache sont servis via mapping mémoire, réduisant les appels système et les copies de données.
 * **Cache-Control Agressif** : Les assets sont servis avec `public, max-age=31536000, immutable`.
-* **Nettoyage Auto** : Les limiteurs de débit par IP sont automatiquement supprimés après inactivité pour économiser la RAM.

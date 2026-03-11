@@ -99,6 +99,12 @@ var (
 	mmapCacheMu sync.Mutex
 )
 
+const (
+	MaxImageDim      = 8000
+	MaxResizeDim     = 4000
+	MaxCacheVariants = 20
+)
+
 var extensionKind = map[string]string{
 	".jpg":  "image",
 	".jpeg": "image",
@@ -178,7 +184,20 @@ func main() {
 	go cleanupVisitors()
 
 	r := gin.New()
-	r.Use(gin.Recovery(), IPRateLimiter())
+
+	if proxies := getEnv("TRUSTED_PROXIES", ""); proxies != "" {
+		_ = r.SetTrustedProxies(strings.Split(proxies, ","))
+	} else {
+		_ = r.SetTrustedProxies(nil)
+	}
+
+	r.Use(gin.Recovery())
+	r.Use(func(c *gin.Context) {
+		c.Header("X-Content-Type-Options", "nosniff")
+		c.Header("X-Frame-Options", "DENY")
+		c.Next()
+	})
+	r.Use(IPRateLimiter())
 
 	r.GET("/metadata/*path", func(c *gin.Context) {
 		relPath, ok := sanitizeRelativePath(c.Param("path"))
@@ -339,6 +358,11 @@ func sanitizeRelativePath(raw string) (string, bool) {
 		return "", false
 	}
 
+	full := filepath.Join(SourceDir, relPath)
+	if !strings.HasPrefix(full, SourceDir+string(os.PathSeparator)) && full != SourceDir {
+		return "", false
+	}
+
 	return relPath, true
 }
 
@@ -360,6 +384,13 @@ func parseDims(rawQuery string) (int, int) {
 	}
 	if h < 0 {
 		h = 0
+	}
+
+	if w > MaxResizeDim {
+		w = MaxResizeDim
+	}
+	if h > MaxResizeDim {
+		h = MaxResizeDim
 	}
 
 	return w, h
@@ -524,6 +555,18 @@ func loadSourceImage(path string) (image.Image, error) {
 	}
 	sourceCacheMu.Unlock()
 
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	if cfg, _, err := image.DecodeConfig(f); err == nil {
+		if cfg.Width > MaxImageDim || cfg.Height > MaxImageDim {
+			return nil, fmt.Errorf("image too large: %dx%d (max %d)", cfg.Width, cfg.Height, MaxImageDim)
+		}
+	}
+
 	img, err := imaging.Open(path)
 	if err != nil {
 		return nil, err
@@ -620,6 +663,19 @@ func handleImageAction(c *gin.Context, req *ActionRequest) {
 
 	if req.Action == "webp" {
 		mimeType = "image/webp"
+	}
+
+	if !fileExists(cacheFile) {
+		pattern := filepath.Join(CacheBase, req.Action, "*", req.RelPath)
+		if req.Action == "webp" {
+			pattern += ".webp"
+		}
+		if matches, _ := filepath.Glob(pattern); len(matches) >= MaxCacheVariants {
+			c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{
+				"error": "too many cache variants generated for this image",
+			})
+			return
+		}
 	}
 
 	if fileExists(cacheFile) {
@@ -730,7 +786,7 @@ func handleExcelCSV(c *gin.Context, req *ActionRequest) {
 	)
 
 	generateCached(c, cacheFile, "text/csv; charset=utf-8", func() ([]byte, error) {
-		f, err := excelize.OpenFile(req.SourceFile)
+		f, err := excelize.OpenFile(req.SourceFile, excelize.Options{UnzipXMLSizeLimit: 250 * 1024 * 1024})
 		if err != nil {
 			return nil, err
 		}
@@ -770,7 +826,7 @@ func handleExcelJSON(c *gin.Context, req *ActionRequest) {
 	)
 
 	generateCached(c, cacheFile, "application/json; charset=utf-8", func() ([]byte, error) {
-		f, err := excelize.OpenFile(req.SourceFile)
+		f, err := excelize.OpenFile(req.SourceFile, excelize.Options{UnzipXMLSizeLimit: 250 * 1024 * 1024})
 		if err != nil {
 			return nil, err
 		}
