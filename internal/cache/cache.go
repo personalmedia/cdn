@@ -122,6 +122,11 @@ func LoadSourceImage(path string, reqW, reqH int) (image.Image, error) {
 		if err != nil {
 			return nil, err
 		}
+	} else if ext == ".pdf" {
+		img, err = GeneratePDFCover(path)
+		if err != nil {
+			return nil, err
+		}
 	} else {
 		f, err := os.Open(path)
 		if err != nil {
