@@ -53,6 +53,7 @@ RATE_PER_SEC=100
 
 * **WebP Conversion**: `GET /o/webp/photo.jpg`
 * **Resize & Smart Crop**: `GET /o/resize/photo.png?800x600` (Automatically detects subjects and uses content-aware smart cropping when aspect ratios change)
+* **Portrait Crop**: `GET /o/portrait/photo.jpg?400x400` (Uses an optimized Top-anchor crop specifically designed to prioritize and frame faces/heads perfectly)
 * **Blur**: `GET /o/blur/bg.jpg?1920x1080`
 * *Note: If the source is missing, a neutral placeholder is automatically generated.*
 

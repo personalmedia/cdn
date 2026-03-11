@@ -6,6 +6,7 @@ require (
 	github.com/chai2010/webp v1.4.0
 	github.com/disintegration/imaging v1.6.2
 	github.com/edsrzf/mmap-go v1.2.0
+	github.com/esimov/pigo v1.4.6
 	github.com/gin-gonic/gin v1.12.0
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/joho/godotenv v1.5.1

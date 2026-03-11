@@ -24,9 +24,10 @@ import (
 type ProcessorFunc func(img image.Image, w, h int) image.Image
 
 var ImageProcessors = map[string]ProcessorFunc{
-	"resize": processResize,
-	"webp":   processResize,
-	"blur":   processBlur,
+	"resize":   processResize,
+	"webp":     processResize,
+	"blur":     processBlur,
+	"portrait": ProcessPortraitWithFaceDetect,
 }
 
 var ResizePool chan struct{}

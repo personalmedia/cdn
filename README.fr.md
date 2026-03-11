@@ -53,6 +53,7 @@ RATE_PER_SEC=100       # Limite de requêtes par IP
 
 * **Conversion WebP** : `GET /o/webp/photo.jpg` (Taille originale)
 * **Redimensionnement & Smart Crop** : `GET /o/resize/photo.png?800x600` (Détecte automatiquement le sujet de l'image pour un recadrage intelligent en cas de changement de proportions)
+* **Portrait (Faces)** : `GET /o/portrait/photo.jpg?400x400` (Utilise un point d'ancrage "Top" optimisé spécifiquement pour garantir que les visages ne soient jamais coupés)
 * **Flou (Blur)** : `GET /o/blur/bg.jpg?1920x1080`
 * *Note : Si le fichier source est absent, un placeholder gris neutre est généré automatiquement.*
 

@@ -35,7 +35,7 @@ func RouteProcessor(c *gin.Context) {
 	ext := strings.ToLower(filepath.Ext(relPath))
 	kind, ok := extensionKind[ext]
 	if !ok {
-		if actionName == "resize" || actionName == "webp" || actionName == "blur" {
+		if actionName == "resize" || actionName == "webp" || actionName == "blur" || actionName == "portrait" {
 			kind = "image"
 		} else if actionName == "csv" || actionName == "json" {
 			kind = "excel"
