@@ -20,6 +20,7 @@ var extensionKind = map[string]string{
 	".png":  "image",
 	".gif":  "image",
 	".webp": "image",
+	".svg":  "image",
 	".xlsx": "excel",
 }
 

@@ -12,6 +12,8 @@ import (
 	"github.com/disintegration/imaging"
 	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/personalmedia/cdn/internal/config"
+	"github.com/srwiley/oksvg"
+	"github.com/srwiley/rasterx"
 	"golang.org/x/sync/singleflight"
 )
 
@@ -101,23 +103,33 @@ func LoadSourceImage(path string) (image.Image, error) {
 	}
 	sourceLRUMu.Unlock()
 
-	f, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
+	var img image.Image
 
-	if cfg, _, err := image.DecodeConfig(f); err == nil {
-		if cfg.Width > config.MaxImageDim || cfg.Height > config.MaxImageDim {
-			return nil, fmt.Errorf("image too large: %dx%d (max %d)", cfg.Width, cfg.Height, config.MaxImageDim)
+	ext := strings.ToLower(filepath.Ext(path))
+	if ext == ".svg" {
+		img, err = loadSVGAsImage(path)
+		if err != nil {
+			return nil, err
 		}
 	} else {
-		return nil, err
-	}
+		f, err := os.Open(path)
+		if err != nil {
+			return nil, err
+		}
+		defer f.Close()
 
-	img, err := imaging.Open(path)
-	if err != nil {
-		return nil, err
+		if cfg, _, err := image.DecodeConfig(f); err == nil {
+			if cfg.Width > config.MaxImageDim || cfg.Height > config.MaxImageDim {
+				return nil, fmt.Errorf("image too large: %dx%d (max %d)", cfg.Width, cfg.Height, config.MaxImageDim)
+			}
+		} else {
+			return nil, err
+		}
+
+		img, err = imaging.Open(path)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	sourceLRUMu.Lock()
@@ -127,6 +139,27 @@ func LoadSourceImage(path string) (image.Image, error) {
 		size:    size,
 	})
 	sourceLRUMu.Unlock()
+
+	return img, nil
+}
+
+func loadSVGAsImage(path string) (image.Image, error) {
+	icon, err := oksvg.ReadIcon(path, oksvg.IgnoreErrorMode)
+	if err != nil {
+		return nil, err
+	}
+
+	w, h := int(icon.ViewBox.W), int(icon.ViewBox.H)
+	if w == 0 || h == 0 {
+		w, h = 512, 512
+	}
+
+	icon.SetTarget(0, 0, float64(w), float64(h))
+
+	img := image.NewRGBA(image.Rect(0, 0, w, h))
+	scanner := rasterx.NewScannerGV(w, h, img, img.Bounds())
+	raster := rasterx.NewDasher(w, h, scanner)
+	icon.Draw(raster, 1.0)
 
 	return img, nil
 }
