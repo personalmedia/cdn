@@ -1,7 +1,7 @@
 package server
 
 import (
-	"fmt"
+	"log"
 
 	"github.com/gin-gonic/gin"
 	"github.com/personalmedia/cdn/internal/config"
@@ -20,6 +20,7 @@ func Start() error {
 		_ = r.SetTrustedProxies(nil)
 	}
 
+	r.Use(gin.Logger())
 	r.Use(gin.Recovery())
 	r.Use(SecurityHeaders())
 	r.Use(IPRateLimiter())
@@ -37,7 +38,7 @@ func Start() error {
 		RouteProcessor(c)
 	})
 
-	fmt.Printf(
+	log.Printf(
 		"🚀 Universal Transformer :%s | Source: %s | Cache: %s | Workers: %d | SourceLRU: %d | MMapLRU: %d\n",
 		config.App.Port,
 		config.App.SourceDir,

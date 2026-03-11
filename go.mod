@@ -10,6 +10,7 @@ require (
 	github.com/gin-gonic/gin v1.12.0
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/joho/godotenv v1.5.1
+	github.com/l3dlp/logfile v0.0.0-20230810212451-01fce7a2b76f
 	github.com/ledongthuc/pdf v0.0.0-20250511090121-5959a4027728
 	github.com/muesli/smartcrop v0.3.0
 	github.com/srwiley/oksvg v0.0.0-20221011165216-be6e8873101c

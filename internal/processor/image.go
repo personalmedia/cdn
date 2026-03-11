@@ -2,13 +2,13 @@ package processor
 
 import (
 	"bytes"
-	"fmt"
 	"image"
 	"image/color"
 	"image/draw"
 	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -154,7 +154,7 @@ func HandleImageAction(c *gin.Context, req *ActionRequest) {
 	})
 
 	if err != nil {
-		fmt.Println("HandleImageAction Error:", err)
+		log.Println("HandleImageAction Error:", err)
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}

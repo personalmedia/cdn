@@ -28,6 +28,7 @@ type AppConfig struct {
 	SourceCacheCap int
 	MMapCacheCap   int
 	TrustedProxies []string
+	LogFile        string
 }
 
 // App holds the global configuration state after Load() is called.
@@ -48,6 +49,7 @@ func Load() {
 		Workers:        getEnvInt("WORKERS", runtime.NumCPU()),
 		SourceCacheCap: getEnvInt("SOURCE_CACHE_CAP", 512),
 		MMapCacheCap:   getEnvInt("MMAP_CACHE_CAP", 256),
+		LogFile:        filepath.Clean(getEnv("CDN_LOG_FILE", "/var/log/cdn.log")),
 	}
 
 	if App.Workers < 1 {
