@@ -574,6 +574,10 @@ func loadSourceImage(path string) (image.Image, error) {
 		if cfg.Width > MaxImageDim || cfg.Height > MaxImageDim {
 			return nil, fmt.Errorf("image too large: %dx%d (max %d)", cfg.Width, cfg.Height, MaxImageDim)
 		}
+	} else {
+		// If decoding the config fails (e.g. file is not a valid image format), return an error
+		// so the caller can fallback to a placeholder
+		return nil, err
 	}
 
 	img, err := imaging.Open(path)
@@ -716,7 +720,8 @@ func handleImageAction(c *gin.Context, req *ActionRequest) {
 			var err error
 			img, err = loadSourceImage(req.SourceFile)
 			if err != nil {
-				return nil, err
+				// Fallback to placeholder on decode failure (e.g. not an image)
+				img = generatePlaceholder(req.W, req.H)
 			}
 		}
 
