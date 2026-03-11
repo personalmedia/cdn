@@ -315,8 +315,15 @@ func routeProcessor(c *gin.Context) {
 	ext := strings.ToLower(filepath.Ext(relPath))
 	kind, ok := extensionKind[ext]
 	if !ok {
-		c.AbortWithStatus(http.StatusUnsupportedMediaType)
-		return
+		// Infer kind from the action being requested to support files without extensions
+		if actionName == "resize" || actionName == "webp" || actionName == "blur" {
+			kind = "image"
+		} else if actionName == "csv" || actionName == "json" {
+			kind = "excel"
+		} else {
+			c.AbortWithStatus(http.StatusUnsupportedMediaType)
+			return
+		}
 	}
 
 	kindHandlers, ok := processors[kind]
@@ -869,15 +876,22 @@ func handleMetadata(c *gin.Context, relPath string) {
 	width, height := 0, 0
 	kind := extensionKind[strings.ToLower(filepath.Ext(relPath))]
 
-	if kind == "image" {
+	if kind == "image" || kind == "" {
 		reader, err := os.Open(sourceFile)
 		if err == nil {
 			defer reader.Close()
 			if config, _, err := image.DecodeConfig(reader); err == nil {
 				width = config.Width
 				height = config.Height
+				if kind == "" {
+					kind = "image"
+				}
 			}
 		}
+	}
+
+	if kind == "" {
+		kind = "unknown"
 	}
 
 	writeValidators(c, info)
