@@ -90,7 +90,7 @@ func HandleImageAction(c *gin.Context, req *ActionRequest) {
 			img = generatePlaceholder(req.W, req.H)
 		} else {
 			var err error
-			img, err = cache.LoadSourceImage(req.SourceFile)
+			img, err = cache.LoadSourceImage(req.SourceFile, req.W, req.H)
 			if err != nil {
 				img = generatePlaceholder(req.W, req.H)
 			}

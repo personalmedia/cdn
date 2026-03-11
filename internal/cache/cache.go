@@ -84,7 +84,7 @@ func DetectOutputMime(filename string) string {
 	return "application/octet-stream"
 }
 
-func LoadSourceImage(path string) (image.Image, error) {
+func LoadSourceImage(path string, reqW, reqH int) (image.Image, error) {
 	info, err := os.Stat(path)
 	if err != nil {
 		return nil, err
@@ -93,21 +93,29 @@ func LoadSourceImage(path string) (image.Image, error) {
 	modUnix := info.ModTime().UTC().UnixNano()
 	size := info.Size()
 
+	var cacheKey string
+	ext := strings.ToLower(filepath.Ext(path))
+
+	if ext == ".svg" {
+		cacheKey = fmt.Sprintf("%s@%dx%d", path, reqW, reqH)
+	} else {
+		cacheKey = path
+	}
+
 	sourceLRUMu.Lock()
-	if entry, ok := sourceLRU.Get(path); ok {
+	if entry, ok := sourceLRU.Get(cacheKey); ok {
 		if entry != nil && entry.modUnix == modUnix && entry.size == size {
 			sourceLRUMu.Unlock()
 			return entry.img, nil
 		}
-		sourceLRU.Remove(path)
+		sourceLRU.Remove(cacheKey)
 	}
 	sourceLRUMu.Unlock()
 
 	var img image.Image
 
-	ext := strings.ToLower(filepath.Ext(path))
 	if ext == ".svg" {
-		img, err = loadSVGAsImage(path)
+		img, err = loadSVGAsImage(path, reqW, reqH)
 		if err != nil {
 			return nil, err
 		}
@@ -133,7 +141,7 @@ func LoadSourceImage(path string) (image.Image, error) {
 	}
 
 	sourceLRUMu.Lock()
-	sourceLRU.Add(path, &SourceImage{
+	sourceLRU.Add(cacheKey, &SourceImage{
 		img:     img,
 		modUnix: modUnix,
 		size:    size,
@@ -143,18 +151,31 @@ func LoadSourceImage(path string) (image.Image, error) {
 	return img, nil
 }
 
-func loadSVGAsImage(path string) (image.Image, error) {
+func loadSVGAsImage(path string, reqW, reqH int) (image.Image, error) {
 	icon, err := oksvg.ReadIcon(path, oksvg.IgnoreErrorMode)
 	if err != nil {
 		return nil, err
 	}
 
-	w, h := int(icon.ViewBox.W), int(icon.ViewBox.H)
-	if w == 0 || h == 0 {
-		w, h = 512, 512
+	viewW, viewH := float64(icon.ViewBox.W), float64(icon.ViewBox.H)
+	if viewW == 0 || viewH == 0 {
+		viewW, viewH = 512, 512
 	}
 
-	icon.SetTarget(0, 0, float64(w), float64(h))
+	// Calculate target dimensions proportionality
+	targetW, targetH := float64(reqW), float64(reqH)
+	
+	if targetW == 0 && targetH == 0 {
+		targetW, targetH = viewW, viewH
+	} else if targetW == 0 {
+		targetW = targetH * (viewW / viewH)
+	} else if targetH == 0 {
+		targetH = targetW * (viewH / viewW)
+	}
+
+	w, h := int(targetW), int(targetH)
+
+	icon.SetTarget(0, 0, targetW, targetH)
 
 	img := image.NewRGBA(image.Rect(0, 0, w, h))
 	scanner := rasterx.NewScannerGV(w, h, img, img.Bounds())
