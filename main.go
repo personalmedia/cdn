@@ -24,6 +24,8 @@ import (
 
 	"github.com/chai2010/webp"
 	"github.com/disintegration/imaging"
+	"github.com/muesli/smartcrop"
+	"github.com/muesli/smartcrop/nfnt"
 	mmap "github.com/edsrzf/mmap-go"
 	"github.com/gin-gonic/gin"
 	lru "github.com/hashicorp/golang-lru/v2"
@@ -896,6 +898,20 @@ func processResize(img image.Image, w, h int) image.Image {
 	if w == 0 && h == 0 {
 		return img
 	}
+
+	// Simple scale if only one dimension is provided (keeps proportional ratio)
+	if w == 0 || h == 0 {
+		return imaging.Resize(img, w, h, imaging.Lanczos)
+	}
+
+	// For specific wxh bounded dimensions, dynamically crop to the best content first
+	analyzer := smartcrop.NewAnalyzer(nfnt.NewDefaultResizer())
+	topCrop, err := analyzer.FindBestCrop(img, w, h)
+	if err == nil {
+		img = imaging.Crop(img, topCrop)
+	}
+
+	// Final scale down to exact bounds
 	return imaging.Resize(img, w, h, imaging.Lanczos)
 }
 
