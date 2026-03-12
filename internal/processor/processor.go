@@ -18,6 +18,8 @@ type ActionRequest struct {
 	W          int
 	H          int
 	Page       int
+	Quality    int
+	Filter     string
 	Query      string
 }
 
@@ -39,24 +41,33 @@ func SanitizeRelativePath(raw string) (string, bool) {
 	return relPath, true
 }
 
-func ParseDims(rawQuery string) (int, int, int) {
+func ParseDims(rawQuery string) (int, int, int, string, int) {
 	if rawQuery == "" {
-		return 0, 0, 1
+		return 0, 0, 1, "", 0
 	}
 
 	page := 1
+	filter := ""
+	quality := 0
 	pageParts := strings.Split(strings.ToLower(rawQuery), ":")
 	dimsPart := pageParts[0]
 
-	if len(pageParts) > 1 {
-		if p, err := strconv.Atoi(pageParts[1]); err == nil && p > 0 {
+	for i := 1; i < len(pageParts); i++ {
+		val := pageParts[i]
+		if p, err := strconv.Atoi(val); err == nil && p > 0 {
 			page = p
+		} else if strings.HasPrefix(val, "q") {
+			if q, err := strconv.Atoi(strings.TrimPrefix(val, "q")); err == nil && q > 0 && q <= 100 {
+				quality = q
+			}
+		} else if val == "blur" || val == "portrait" {
+			filter = val
 		}
 	}
 
 	parts := strings.Split(dimsPart, "x")
 	if len(parts) != 2 {
-		return 0, 0, page
+		return 0, 0, page, filter, quality
 	}
 
 	w, _ := strconv.Atoi(parts[0])
@@ -76,5 +87,5 @@ func ParseDims(rawQuery string) (int, int, int) {
 		h = config.MaxResizeDim
 	}
 
-	return w, h, page
+	return w, h, page, filter, quality
 }

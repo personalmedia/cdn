@@ -27,6 +27,7 @@ func Start() error {
 
 	r.GET("/metadata/*path", HandleMetadata)
 
+	r.GET("/cdn/*path", RouteProcessor)
 	r.GET("/o/:action/*path", RouteProcessor)
 
 	// Compat vieux format

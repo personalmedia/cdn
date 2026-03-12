@@ -50,27 +50,27 @@ RATE_PER_SEC=100       # Limite de requêtes par IP
 
 ### 🖼️ Traitement d'Images
 
-`GET /o/:action/*path?{largeur}x{hauteur}`
+`GET /cdn/*path.ext?{largeur}x{hauteur}:{filtre}:{qualité}`
 
-* **Conversion WebP** : `GET /o/webp/photo.jpg` (Taille originale)
-* **Redimensionnement & Smart Crop** : `GET /o/resize/photo.png?800x600` (Détecte automatiquement le sujet de l'image pour un recadrage intelligent en cas de changement de proportions)
-* **Portrait (Faces)** : `GET /o/portrait/photo.jpg?400x400` (Utilise un point d'ancrage "Top" optimisé spécifiquement pour garantir que les visages ne soient jamais coupés)
-* **Flou (Blur)** : `GET /o/blur/bg.jpg?1920x1080`
-* *Note : Si le fichier source est absent, un placeholder gris neutre est généré automatiquement.*
+* **Conversion WebP** : `GET /cdn/photo.jpg.webp?0x0:q80` (Taille originale, compression 80%)
+* **Redimensionnement & Smart Crop** : `GET /cdn/photo.png?800x600` (Détecte automatiquement le sujet de l'image pour un recadrage intelligent en cas de changement de proportions)
+* **Portrait (Faces)** : `GET /cdn/photo.jpg?400x400:portrait:q75` (Utilise un point d'ancrage "Top" optimisé spécifiquement pour garantir que les visages ne soient jamais coupés)
+* **Flou (Blur)** : `GET /cdn/bg.jpg?1920x1080:blur:q60`
+* *Note : Si le fichier source est absent, un placeholder gris neutre est généré automatiquement. L'ancienne syntaxe `/o/:action/*path` reste supportée.*
 
 ### 📄 Document Intelligence (PDF)
 
-`GET /o/:action/*path`
+`GET /cdn/*path.ext`
 
-* **Rendu de Page PDF** : `GET /o/resize/document.pdf?800x600:2` (Rasterise la page 2 précise du document de manière transparente).
-* **Extraction de Texte** : `GET /o/text/document.pdf` (Extrait le texte brut du PDF pour l'indexation).
+* **Rendu de Page PDF** : `GET /cdn/document.pdf.jpg?800x600:2` (Rasterise la page 2 précise du document de manière transparente).
+* **Extraction de Texte** : `GET /cdn/document.pdf.txt` (Extrait le texte brut du PDF pour l'indexation).
 
 ### 📊 Transformation Excel
 
-`GET /o/:action/*path`
+`GET /cdn/*path.ext`
 
-* **Excel vers CSV** : `GET /o/csv/data/rapport.xlsx` (Extrait la première feuille).
-* **Excel vers JSON** : `GET /o/json/data/rapport.xlsx` (Extrait toutes les feuilles dans un objet structuré).
+* **Excel vers CSV** : `GET /cdn/data/rapport.xlsx.csv` (Extrait la première feuille).
+* **Excel vers JSON** : `GET /cdn/data/rapport.xlsx.json` (Extrait toutes les feuilles dans un objet structuré).
 
 ### 🔍 Métadonnées
 

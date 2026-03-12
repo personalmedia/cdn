@@ -13,6 +13,7 @@ Où va-t-on à partir d'ici ? Voici les prochaines étapes logiques, allant d'op
 * [x] **Cadrage Intelligent (Smart Crop) & Computer Vision** : Intégration d'un algorithme de recadrage intelligent, et surtout, création du endpoint `/o/portrait/` utilisant la reconnaissance faciale (via réseaux de neurones vectorisés nativement en Go sans CGO avec Pigo) pour toujours centrer avec précision sur le visage.
 * [x] **Support Vectoriel Natif (SVG)** : Rasterisation mathématique dynamique au pixel près des fichiers `.svg` avec du pur Go, ce qui élimine pixellisations et flous tout en permettant un chaînage naturel avec les webp/blur/resize.
 * [x] **Routage PDF Avancé** : Pixellisation à la demande des PDF via l'utilitaire `pdftoppm` avec sélection précise de la page (`?400x400:2`), extraction de texte structuré et intégration du décompte de pages dans l'endpoint Metadata.
+* [x] **URL Schema & Chaînage Dynamique** : Simplification du système de rendu avec `GET /cdn/*path.ext?WxH:filter:qX`, permettant de masquer l'action au profit d'extensions concrètes, et de chaîner les paramètres comme la qualité (`q80`) ou les filtres (`blur`).
 * [x] **Robustesse "Zero-Errors" & Centralized Logging** : L'API ne renvoie plus d'erreurs sèches (404/500) pour préserver le client frontend, priorisant le renvoi de "formats vides" (images grises, `[]` JSON, etc.) avec un statut HTTP 200 OK. Le moteur intègre également un système de journalisation complet basé sur `logfile` pour une tracabilité maximale.
 
 ---

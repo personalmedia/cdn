@@ -27,9 +27,34 @@ var extensionKind = map[string]string{
 }
 
 func RouteProcessor(c *gin.Context) {
-	actionName := c.Param("action")
+	var actionName, relPath string
 
-	relPath, ok := processor.SanitizeRelativePath(c.Param("path"))
+	if strings.HasPrefix(c.Request.URL.Path, "/cdn/") {
+		rawPath := c.Param("path")
+		ext := strings.ToLower(filepath.Ext(rawPath))
+		
+		if ext == ".webp" || ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".gif" || ext == ".csv" || ext == ".json" || ext == ".txt" {
+			actionName = strings.TrimPrefix(ext, ".")
+			relPath = strings.TrimSuffix(rawPath, ext)
+			if actionName == "txt" {
+				actionName = "text"
+			}
+			if actionName == "jpg" || actionName == "jpeg" || actionName == "png" || actionName == "gif" {
+			     actionName = "resize" // standard resize if format is matching image output, we'll keep Action simple
+			     // if you specifically requested .webp, it's webp action. Else standard resize/encode to source type
+			}
+		} else {
+             actionName = "resize"
+             relPath = rawPath
+             // implicitly an image proxy 
+		}
+
+	} else {
+		actionName = c.Param("action")
+		relPath = c.Param("path")
+	}
+
+	relPath, ok := processor.SanitizeRelativePath(relPath)
 	if !ok {
 		c.AbortWithStatus(http.StatusForbidden)
 		return
@@ -55,9 +80,9 @@ func RouteProcessor(c *gin.Context) {
 		kind = "pdf"
 	}
 
-	w, h, page := 0, 0, 1
+	w, h, page, quality, filter := 0, 0, 1, 0, ""
 	if kind == "image" {
-		w, h, page = processor.ParseDims(c.Request.URL.RawQuery)
+		w, h, page, filter, quality = processor.ParseDims(c.Request.URL.RawQuery)
 	}
 
 	req := &processor.ActionRequest{
@@ -69,6 +94,8 @@ func RouteProcessor(c *gin.Context) {
 		W:          w,
 		H:          h,
 		Page:       page,
+		Quality:    quality,
+		Filter:     filter,
 		Query:      c.Request.URL.RawQuery,
 	}
 

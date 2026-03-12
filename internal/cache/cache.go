@@ -59,7 +59,7 @@ func SourceExists(filename string) bool {
 	return err == nil
 }
 
-func NormalizedDimsFolder(w, h, page int) string {
+func NormalizedDimsFolder(w, h, page int, filter string, quality int) string {
 	var base string
 	if w == 0 && h == 0 {
 		base = "original"
@@ -68,13 +68,19 @@ func NormalizedDimsFolder(w, h, page int) string {
 	}
 	
 	if page > 1 {
-		return fmt.Sprintf("%s_p%d", base, page)
+		base = fmt.Sprintf("%s_p%d", base, page)
+	}
+	if filter != "" {
+		base = fmt.Sprintf("%s_%s", base, filter)
+	}
+	if quality > 0 {
+		base = fmt.Sprintf("%s_q%d", base, quality)
 	}
 	return base
 }
 
-func CacheFileForImage(action, relPath string, w, h, page int) string {
-	folder := NormalizedDimsFolder(w, h, page)
+func CacheFileForImage(action, relPath string, w, h, page int, filter string, quality int) string {
+	folder := NormalizedDimsFolder(w, h, page, filter, quality)
 	cacheFile := filepath.Join(config.App.CacheBase, action, folder, relPath)
 
 	if action == "webp" && !strings.HasSuffix(strings.ToLower(cacheFile), ".webp") {

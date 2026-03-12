@@ -50,27 +50,27 @@ RATE_PER_SEC=100
 
 ### 🖼️ Image Processing
 
-`GET /o/:action/*path?{width}x{height}`
+`GET /cdn/*path.ext?{width}x{height}:{filter}:{quality}`
 
-* **WebP Conversion**: `GET /o/webp/photo.jpg`
-* **Resize & Smart Crop**: `GET /o/resize/photo.png?800x600` (Automatically detects subjects and uses content-aware smart cropping when aspect ratios change)
-* **Portrait Crop**: `GET /o/portrait/photo.jpg?400x400` (Uses an optimized Top-anchor crop specifically designed to prioritize and frame faces/heads perfectly)
-* **Blur**: `GET /o/blur/bg.jpg?1920x1080`
-* *Note: If the source is missing, a neutral placeholder is automatically generated.*
+* **WebP Conversion**: `GET /cdn/photo.jpg.webp?0x0:q80` (Original size, 80% compression)
+* **Resize & Smart Crop**: `GET /cdn/photo.png?800x600` (Automatically detects subjects and uses content-aware smart cropping when aspect ratios change)
+* **Portrait Crop**: `GET /cdn/photo.jpg?400x400:portrait:q75` (Uses an optimized Top-anchor crop specifically designed to prioritize and frame faces/heads perfectly)
+* **Blur**: `GET /cdn/bg.jpg?1920x1080:blur:q60`
+* *Note: If the source is missing, a neutral placeholder is automatically generated. The legacy `/o/:action/*path` route remains supported.*
 
 ### 📄 PDF Document Intelligence
 
-`GET /o/:action/*path`
+`GET /cdn/*path.ext`
 
-* **PDF Page Render**: `GET /o/resize/document.pdf?800x600:2` (Rasterizes specific page 2 of the document seamlessly).
-* **Text Extraction**: `GET /o/text/document.pdf` (Extracts plain text representations of PDFs for indexing).
+* **PDF Page Render**: `GET /cdn/document.pdf.jpg?800x600:2` (Rasterizes specific page 2 of the document seamlessly).
+* **Text Extraction**: `GET /cdn/document.pdf.txt` (Extracts plain text representations of PDFs for indexing).
 
 ### 📊 Excel Transformation
 
-`GET /o/:action/*path`
+`GET /cdn/*path.ext`
 
-* **Excel to CSV**: `GET /o/csv/data/report.xlsx` (Extracts the first sheet).
-* **Excel to JSON**: `GET /o/json/data/report.xlsx` (Extracts all sheets into a keyed object).
+* **Excel to CSV**: `GET /cdn/data/report.xlsx.csv` (Extracts the first sheet).
+* **Excel to JSON**: `GET /cdn/data/report.xlsx.json` (Extracts all sheets into a keyed object).
 
 ### 🔍 Metadata
 

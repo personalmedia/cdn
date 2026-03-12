@@ -38,13 +38,16 @@ func InitImage() {
 }
 
 func HandleImageAction(c *gin.Context, req *ActionRequest) {
-	proc, ok := ImageProcessors[req.Action]
+	procKey := req.Action
+	if req.Filter != "" {
+		procKey = req.Filter
+	}
+	proc, ok := ImageProcessors[procKey]
 	if !ok {
-		c.AbortWithStatus(http.StatusBadRequest)
-		return
+		proc = processResize
 	}
 
-	cacheFile := cache.CacheFileForImage(req.Action, req.RelPath, req.W, req.H, req.Page)
+	cacheFile := cache.CacheFileForImage(req.Action, req.RelPath, req.W, req.H, req.Page, req.Filter, req.Quality)
 	mimeType := cache.DetectOutputMime(cacheFile)
 
 	if req.Action == "webp" {
@@ -110,7 +113,11 @@ func HandleImageAction(c *gin.Context, req *ActionRequest) {
 		if req.Action == "webp" {
 			buf := new(bytes.Buffer)
 
-			if err := webp.Encode(buf, dst, &webp.Options{Quality: 75}); err != nil {
+			q := 75
+			if req.Quality > 0 {
+				q = req.Quality
+			}
+			if err := webp.Encode(buf, dst, &webp.Options{Quality: float32(q)}); err != nil {
 				return nil, err
 			}
 
@@ -128,15 +135,20 @@ func HandleImageAction(c *gin.Context, req *ActionRequest) {
 		}
 
 		var saveErr error
+		opts := []imaging.EncodeOption{}
+		if req.Quality > 0 && !strings.HasSuffix(strings.ToLower(cacheFile), ".png") && !strings.HasSuffix(strings.ToLower(cacheFile), ".gif") {
+			opts = append(opts, imaging.JPEGQuality(req.Quality))
+		}
+		
 		if strings.HasSuffix(strings.ToLower(cacheFile), ".pdf") {
 			tmpPng := cacheFile + ".png"
-			if err := imaging.Save(dst, tmpPng); err == nil {
+			if err := imaging.Save(dst, tmpPng, opts...); err == nil {
 				saveErr = os.Rename(tmpPng, cacheFile)
 			} else {
 				saveErr = err
 			}
 		} else {
-			saveErr = imaging.Save(dst, cacheFile)
+			saveErr = imaging.Save(dst, cacheFile, opts...)
 		}
 		
 		if saveErr != nil {
