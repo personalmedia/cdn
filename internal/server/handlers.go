@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/ledongthuc/pdf"
 	"github.com/personalmedia/cdn/internal/cache"
 	"github.com/personalmedia/cdn/internal/config"
 	"github.com/personalmedia/cdn/internal/processor"
@@ -54,9 +55,9 @@ func RouteProcessor(c *gin.Context) {
 		kind = "pdf"
 	}
 
-	w, h := 0, 0
+	w, h, page := 0, 0, 1
 	if kind == "image" {
-		w, h = processor.ParseDims(c.Request.URL.RawQuery)
+		w, h, page = processor.ParseDims(c.Request.URL.RawQuery)
 	}
 
 	req := &processor.ActionRequest{
@@ -67,6 +68,7 @@ func RouteProcessor(c *gin.Context) {
 		SourceExt:  ext,
 		W:          w,
 		H:          h,
+		Page:       page,
 		Query:      c.Request.URL.RawQuery,
 	}
 
@@ -102,8 +104,9 @@ func HandleMetadata(c *gin.Context) {
 		return
 	}
 
-	width, height := 0, 0
-	kind := extensionKind[strings.ToLower(filepath.Ext(relPath))]
+	width, height, pages := 0, 0, 0
+	ext := strings.ToLower(filepath.Ext(relPath))
+	kind := extensionKind[ext]
 
 	if kind == "image" || kind == "" {
 		reader, err := os.Open(sourceFile)
@@ -115,6 +118,16 @@ func HandleMetadata(c *gin.Context) {
 				if kind == "" {
 					kind = "image"
 				}
+			}
+		}
+	}
+
+	if kind == "pdf" || ext == ".pdf" {
+		if f, reader, err := pdf.Open(sourceFile); err == nil {
+			pages = reader.NumPage()
+			f.Close()
+			if kind == "" {
+				kind = "pdf"
 			}
 		}
 	}
@@ -133,6 +146,7 @@ func HandleMetadata(c *gin.Context) {
 		"mime":     mime.TypeByExtension(filepath.Ext(sourceFile)),
 		"width":    width,
 		"height":   height,
+		"pages":    pages,
 		"modified": info.ModTime().Format("2006-01-02 15:04:05"),
 	})
 }

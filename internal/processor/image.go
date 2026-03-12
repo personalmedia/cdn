@@ -45,7 +45,7 @@ func HandleImageAction(c *gin.Context, req *ActionRequest) {
 		return
 	}
 
-	cacheFile := cache.CacheFileForImage(req.Action, req.RelPath, req.W, req.H)
+	cacheFile := cache.CacheFileForImage(req.Action, req.RelPath, req.W, req.H, req.Page)
 	mimeType := cache.DetectOutputMime(cacheFile)
 
 	if req.Action == "webp" {
@@ -94,7 +94,7 @@ func HandleImageAction(c *gin.Context, req *ActionRequest) {
 			img = generatePlaceholder(req.W, req.H)
 		} else {
 			var err error
-			img, err = cache.LoadSourceImage(req.SourceFile, req.W, req.H)
+			img, err = cache.LoadSourceImage(req.SourceFile, req.W, req.H, req.Page)
 			if err != nil {
 				img = generatePlaceholder(req.W, req.H)
 			}

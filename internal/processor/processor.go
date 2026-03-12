@@ -17,6 +17,7 @@ type ActionRequest struct {
 	SourceExt  string
 	W          int
 	H          int
+	Page       int
 	Query      string
 }
 
@@ -38,14 +39,24 @@ func SanitizeRelativePath(raw string) (string, bool) {
 	return relPath, true
 }
 
-func ParseDims(rawQuery string) (int, int) {
+func ParseDims(rawQuery string) (int, int, int) {
 	if rawQuery == "" {
-		return 0, 0
+		return 0, 0, 1
 	}
 
-	parts := strings.Split(strings.ToLower(rawQuery), "x")
+	page := 1
+	pageParts := strings.Split(strings.ToLower(rawQuery), ":")
+	dimsPart := pageParts[0]
+
+	if len(pageParts) > 1 {
+		if p, err := strconv.Atoi(pageParts[1]); err == nil && p > 0 {
+			page = p
+		}
+	}
+
+	parts := strings.Split(dimsPart, "x")
 	if len(parts) != 2 {
-		return 0, 0
+		return 0, 0, page
 	}
 
 	w, _ := strconv.Atoi(parts[0])
@@ -65,5 +76,5 @@ func ParseDims(rawQuery string) (int, int) {
 		h = config.MaxResizeDim
 	}
 
-	return w, h
+	return w, h, page
 }

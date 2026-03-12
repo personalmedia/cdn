@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -58,15 +59,22 @@ func SourceExists(filename string) bool {
 	return err == nil
 }
 
-func NormalizedDimsFolder(w, h int) string {
+func NormalizedDimsFolder(w, h, page int) string {
+	var base string
 	if w == 0 && h == 0 {
-		return "original"
+		base = "original"
+	} else {
+		base = fmt.Sprintf("%dx%d", w, h)
 	}
-	return fmt.Sprintf("%dx%d", w, h)
+	
+	if page > 1 {
+		return fmt.Sprintf("%s_p%d", base, page)
+	}
+	return base
 }
 
-func CacheFileForImage(action, relPath string, w, h int) string {
-	folder := NormalizedDimsFolder(w, h)
+func CacheFileForImage(action, relPath string, w, h, page int) string {
+	folder := NormalizedDimsFolder(w, h, page)
 	cacheFile := filepath.Join(config.App.CacheBase, action, folder, relPath)
 
 	if action == "webp" && !strings.HasSuffix(strings.ToLower(cacheFile), ".webp") {
@@ -87,7 +95,7 @@ func DetectOutputMime(filename string) string {
 	return "application/octet-stream"
 }
 
-func LoadSourceImage(path string, reqW, reqH int) (image.Image, error) {
+func LoadSourceImage(path string, reqW, reqH, reqPage int) (image.Image, error) {
 	info, err := os.Stat(path)
 	if err != nil {
 		return nil, err
@@ -101,6 +109,8 @@ func LoadSourceImage(path string, reqW, reqH int) (image.Image, error) {
 
 	if ext == ".svg" {
 		cacheKey = fmt.Sprintf("%s@%dx%d", path, reqW, reqH)
+	} else if ext == ".pdf" {
+		cacheKey = fmt.Sprintf("%s@p%d", path, reqPage)
 	} else {
 		cacheKey = path
 	}
@@ -123,7 +133,7 @@ func LoadSourceImage(path string, reqW, reqH int) (image.Image, error) {
 			return nil, err
 		}
 	} else if ext == ".pdf" {
-		img, err = GeneratePDFCover(path)
+		img, err = GeneratePDFCover(path, reqPage)
 		if err != nil {
 			return nil, err
 		}
@@ -194,24 +204,29 @@ func loadSVGAsImage(path string, reqW, reqH int) (image.Image, error) {
 }
 
 // GeneratePDFCover uses os/exec to call pdftoppm (poppler-utils) to rasterize
-// the first page of the PDF into an image.Image.
-func GeneratePDFCover(path string) (image.Image, error) {
+// the specific page of the PDF into an image.Image.
+func GeneratePDFCover(path string, page int) (image.Image, error) {
+	if page < 1 {
+		page = 1
+	}
+	pageStr := strconv.Itoa(page)
+
 	tmpDir := os.TempDir()
 	prefix := fmt.Sprintf("cdn_pdf_cov_%d", time.Now().UnixNano())
 	outPrefix := filepath.Join(tmpDir, prefix)
 	
 	defer func() {
-		os.Remove(outPrefix + "-1.png")
+		os.Remove(outPrefix + "-" + pageStr + ".png")
 	}()
 
-	cmd := exec.Command("pdftoppm", "-f", "1", "-l", "1", "-png", path, outPrefix)
+	cmd := exec.Command("pdftoppm", "-f", pageStr, "-l", pageStr, "-png", path, outPrefix)
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
 		return nil, fmt.Errorf("pdftoppm failed: %v, stderr: %s. Is poppler-utils installed?", err, stderr.String())
 	}
 
-	imgFile := outPrefix + "-1.png"
+	imgFile := outPrefix + "-" + pageStr + ".png"
 	if _, err := os.Stat(imgFile); os.IsNotExist(err) {
 		return nil, fmt.Errorf("pdftoppm did not produce the expected file: %s", imgFile)
 	}
