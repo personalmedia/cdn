@@ -5,9 +5,8 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
-	_ "image/gif"
 	_ "image/jpeg"
-	_ "image/png"
+	"image/png"
 	"log"
 	"net/http"
 	"os"
@@ -155,7 +154,9 @@ func HandleImageAction(c *gin.Context, req *ActionRequest) {
 
 	if err != nil {
 		log.Println("HandleImageAction Error:", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
+		c.Header("Content-Type", "image/png")
+		c.Status(http.StatusOK)
+		_ = png.Encode(c.Writer, generatePlaceholder(req.W, req.H))
 		return
 	}
 
@@ -175,7 +176,9 @@ func HandleImageAction(c *gin.Context, req *ActionRequest) {
 		return
 	}
 
-	c.AbortWithStatus(http.StatusInternalServerError)
+	c.Header("Content-Type", "image/png")
+	c.Status(http.StatusOK)
+	_ = png.Encode(c.Writer, generatePlaceholder(req.W, req.H))
 }
 
 func processResize(img image.Image, w, h int) image.Image {

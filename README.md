@@ -6,7 +6,8 @@ A high-performance, secure asset transformation engine. It acts as a smart proxy
 
 ## ✨ New & Core Features
 
-* **Multimodal Processing**: Handles both **Images** (Resize, WebP, Blur) and **Data** (Excel XLSX to CSV/JSON).
+* **Multimodal Processing**: Handles **Images** (Resize, WebP, Blur), **PDFs** (Page pixelization, Text extraction), and **Data** (Excel XLSX to CSV/JSON).
+* **Zero-Error Fallbacks**: The engine guarantees safe frontend rendering by gracefully falling back to empty representations (placeholder images, empty arrays `[]`) instead of throwing 404/500 HTTP errors.
 * **Dual-Layer LRU Cache**:
 * **Source Cache**: Keeps decoded images in memory to avoid redundant disk I/O.
 * **MMap Cache**: Uses `mmap-go` to map hot cache files directly into memory address space for near-zero latency delivery.
@@ -57,6 +58,13 @@ RATE_PER_SEC=100
 * **Blur**: `GET /o/blur/bg.jpg?1920x1080`
 * *Note: If the source is missing, a neutral placeholder is automatically generated.*
 
+### 📄 PDF Document Intelligence
+
+`GET /o/:action/*path`
+
+* **PDF Page Render**: `GET /o/resize/document.pdf?800x600:2` (Rasterizes specific page 2 of the document seamlessly).
+* **Text Extraction**: `GET /o/text/document.pdf` (Extracts plain text representations of PDFs for indexing).
+
 ### 📊 Excel Transformation
 
 `GET /o/:action/*path`
@@ -67,7 +75,7 @@ RATE_PER_SEC=100
 ### 🔍 Metadata
 
 `GET /metadata/*path`
-Returns a JSON summary: dimensions (for images), file size, MIME type, and last modified date.
+Returns a JSON summary: dimensions (for images), file size, MIME type, total pages (for PDFs) and last modified date.
 
 ## 🔗 Infrastructure Integration (Caddy)
 
@@ -116,3 +124,4 @@ The cache is structured for easy maintenance:
 * **Security Headers**: Injects `X-Content-Type-Options: nosniff` and `X-Frame-Options: DENY`.
 * **MMap Efficiency**: Cached files are served via memory mapping, reducing system calls and memory copying.
 * **Aggressive Caching**: Headers include `public, max-age=31536000, immutable`.
+* **Centralized Logging**: Clean stdout formatting and automatic concurrent persistence inside `CDN_LOG_FILE` utilizing `l3dlp/logfile`.

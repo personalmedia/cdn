@@ -6,7 +6,8 @@ Un moteur de transformation d'actifs ultra-performant et sécurisé. Conçu pour
 
 ## ✨ Nouvelles Fonctionnalités & Points Forts
 
-* **Traitement Multimodal** : Gère désormais les **Images** (Resize, WebP, Blur) et les **Données** (Excel vers CSV/JSON).
+* **Traitement Multimodal** : Gère désormais les **Images** (Resize, WebP, Blur), les **PDFs** (Pixellisation par page, Extraction de texte) et les **Données** (Excel vers CSV/JSON).
+* **Robustesse "Zero-Errors"** : Le moteur garantit un rendu client ininterrompu en substituant de manière transparente toute erreur technique (404/500) par des représentations vides et saines (image grise, ou tableau `[]` vide JSON).
 * **Double Cache LRU (In-Memory)** :
 * **Source Cache** : Conserve les images décodées en RAM pour éviter les lectures disque répétitives.
 * **MMap Cache** : Utilise `mmap-go` pour mapper les fichiers du cache directement dans l'espace d'adressage mémoire (latence quasi nulle).
@@ -57,6 +58,13 @@ RATE_PER_SEC=100       # Limite de requêtes par IP
 * **Flou (Blur)** : `GET /o/blur/bg.jpg?1920x1080`
 * *Note : Si le fichier source est absent, un placeholder gris neutre est généré automatiquement.*
 
+### 📄 Document Intelligence (PDF)
+
+`GET /o/:action/*path`
+
+* **Rendu de Page PDF** : `GET /o/resize/document.pdf?800x600:2` (Rasterise la page 2 précise du document de manière transparente).
+* **Extraction de Texte** : `GET /o/text/document.pdf` (Extrait le texte brut du PDF pour l'indexation).
+
 ### 📊 Transformation Excel
 
 `GET /o/:action/*path`
@@ -67,7 +75,7 @@ RATE_PER_SEC=100       # Limite de requêtes par IP
 ### 🔍 Métadonnées
 
 `GET /metadata/*path`
-Retourne un JSON : dimensions (pour les images), poids, type MIME et date de modification de l'asset original sans décoder l'image complète.
+Retourne un JSON : dimensions (pour les images), poids, type MIME, décompte de pages (pour les PDFs) et date de modification sans décoder l'asset original volumineux.
 
 ## 🔗 Configuration Caddy (Le "Greffon")
 
@@ -119,3 +127,4 @@ Le cache est organisé par action et dimensions pour permettre des purges chirur
 * **Headers de Sécurité** : Injection automatique de `X-Content-Type-Options: nosniff` et `X-Frame-Options: DENY`.
 * **Efficacité MMap** : Les fichiers du cache sont servis via mapping mémoire, réduisant les appels système et les copies de données.
 * **Cache-Control Agressif** : Les assets sont servis avec `public, max-age=31536000, immutable`.
+* **Journalisation Centralisée (Logging)** : Formatage clair sur stdout et persistance concurrente automatique dans `CDN_LOG_FILE` (basé sur le package `l3dlp/logfile`).

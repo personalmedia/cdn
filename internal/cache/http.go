@@ -62,14 +62,14 @@ func ServeNotModifiedOrMappedOrFile(c *gin.Context, filename, mimeType string) b
 	return true
 }
 
-func GenerateCached(c *gin.Context, cacheFile, mimeType string, builder func() ([]byte, error)) {
+func GenerateCached(c *gin.Context, cacheFile, mimeType string, fallback []byte, builder func() ([]byte, error)) {
 	if FileExists(cacheFile) {
 		c.Header("X-CDN-Status", "HIT")
 		c.Header("Cache-Control", "public, max-age=31536000, immutable")
 		if ServeNotModifiedOrMappedOrFile(c, cacheFile, mimeType) {
 			return
 		}
-		c.AbortWithStatus(http.StatusInternalServerError)
+		c.Data(http.StatusOK, mimeType, fallback)
 		return
 	}
 
@@ -107,7 +107,7 @@ func GenerateCached(c *gin.Context, cacheFile, mimeType string, builder func() (
 	})
 
 	if err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
+		c.Data(http.StatusOK, mimeType, fallback)
 		return
 	}
 
@@ -127,5 +127,5 @@ func GenerateCached(c *gin.Context, cacheFile, mimeType string, builder func() (
 		return
 	}
 
-	c.AbortWithStatus(http.StatusInternalServerError)
+	c.Data(http.StatusOK, br.MimeType, fallback)
 }

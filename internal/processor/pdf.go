@@ -14,13 +14,14 @@ import (
 
 // HandlePDFText extracts plain text from a PDF for indexing purposes.
 func HandlePDFText(c *gin.Context, req *ActionRequest) {
+	mimeType := "text/plain; charset=utf-8"
+	
 	if !cache.SourceExists(req.SourceFile) {
-		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "PDF not found"})
+		c.Data(http.StatusOK, mimeType, []byte(""))
 		return
 	}
 
 	cacheFile := cache.CacheFileForDerived(req.Action, req.RelPath, ".txt")
-	mimeType := "text/plain; charset=utf-8"
 
 	if cache.FileExists(cacheFile) {
 		c.Header("X-CDN-Status", "HIT")
@@ -28,7 +29,7 @@ func HandlePDFText(c *gin.Context, req *ActionRequest) {
 		if cache.ServeNotModifiedOrMappedOrFile(c, cacheFile, mimeType) {
 			return
 		}
-		c.AbortWithStatus(http.StatusInternalServerError)
+		c.Data(http.StatusOK, mimeType, []byte(""))
 		return
 	}
 
@@ -65,7 +66,7 @@ func HandlePDFText(c *gin.Context, req *ActionRequest) {
 	})
 
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.Data(http.StatusOK, mimeType, []byte(""))
 		return
 	}
 
@@ -85,7 +86,7 @@ func HandlePDFText(c *gin.Context, req *ActionRequest) {
 		return
 	}
 
-	c.AbortWithStatus(http.StatusInternalServerError)
+	c.Data(http.StatusOK, br.MimeType, []byte(""))
 }
 
 func extractPDFText(path string) (string, error) {

@@ -23,7 +23,7 @@ func HandleExcelCSV(c *gin.Context, req *ActionRequest) {
 		fmt.Sprintf(`attachment; filename="%s"; filename*=UTF-8''%s`, filename, url.PathEscape(filename)),
 	)
 
-	cache.GenerateCached(c, cacheFile, "text/csv; charset=utf-8", func() ([]byte, error) {
+	cache.GenerateCached(c, cacheFile, "text/csv; charset=utf-8", []byte(""), func() ([]byte, error) {
 		f, err := excelize.OpenFile(req.SourceFile, excelize.Options{UnzipXMLSizeLimit: 250 * 1024 * 1024})
 		if err != nil {
 			return nil, err
@@ -63,7 +63,7 @@ func HandleExcelJSON(c *gin.Context, req *ActionRequest) {
 		fmt.Sprintf(`attachment; filename="%s"; filename*=UTF-8''%s`, filename, url.PathEscape(filename)),
 	)
 
-	cache.GenerateCached(c, cacheFile, "application/json; charset=utf-8", func() ([]byte, error) {
+	cache.GenerateCached(c, cacheFile, "application/json; charset=utf-8", []byte("[]"), func() ([]byte, error) {
 		f, err := excelize.OpenFile(req.SourceFile, excelize.Options{UnzipXMLSizeLimit: 250 * 1024 * 1024})
 		if err != nil {
 			return nil, err

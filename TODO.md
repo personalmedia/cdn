@@ -12,6 +12,8 @@ Où va-t-on à partir d'ici ? Voici les prochaines étapes logiques, allant d'op
 * [x] **Sécurité & Résilience** : Correction des failles path traversal, protection contre les attaques DoS (limite de décodage d'images et Zip Bomb Excel), ajout d'entêtes sécuritaires et fallback transparent sur des `Placeholders` en cas de corruption de fichier source.
 * [x] **Cadrage Intelligent (Smart Crop) & Computer Vision** : Intégration d'un algorithme de recadrage intelligent, et surtout, création du endpoint `/o/portrait/` utilisant la reconnaissance faciale (via réseaux de neurones vectorisés nativement en Go sans CGO avec Pigo) pour toujours centrer avec précision sur le visage.
 * [x] **Support Vectoriel Natif (SVG)** : Rasterisation mathématique dynamique au pixel près des fichiers `.svg` avec du pur Go, ce qui élimine pixellisations et flous tout en permettant un chaînage naturel avec les webp/blur/resize.
+* [x] **Routage PDF Avancé** : Pixellisation à la demande des PDF via l'utilitaire `pdftoppm` avec sélection précise de la page (`?400x400:2`), extraction de texte structuré et intégration du décompte de pages dans l'endpoint Metadata.
+* [x] **Robustesse "Zero-Errors" & Centralized Logging** : L'API ne renvoie plus d'erreurs sèches (404/500) pour préserver le client frontend, priorisant le renvoi de "formats vides" (images grises, `[]` JSON, etc.) avec un statut HTTP 200 OK. Le moteur intègre également un système de journalisation complet basé sur `logfile` pour une tracabilité maximale.
 
 ---
 
@@ -44,11 +46,11 @@ La demande en médias animés est colossale. L'idée est de rajouter une route `
 
 Les PDF représentent un monde à part. Le but, ici, est l'extraction sémantique et visuelle pour des tableaux de bords / blogs.
 
-* [x] **Génération Automatique de Cover** :
-    * Transformer la première page d'un PDF dense en une image JPG ou WebP parfaitement optimisée (`GET /o/cover/document.pdf`). Utilisable pour les cartes de partage social (OpenGraph).
+* [x] **Génération Automatique de Cover & Pages** :
+    * Transformer n'importe quelle page d'un PDF dense en une image JPG ou WebP parfaitement optimisée (`GET /o/resize/document.pdf?800x800:2`). Utilisable pour les cartes de partage social (OpenGraph).
 * [x] **Extracteur Textuel & Synthèse** :
     * À la manière d'Excel, extraire le contenu texte brut du PDF (`GET /o/text/document.pdf`), pour indexer le fichier dans un moteur de recherche tel qu'Elasticsearch ou Meilisearch sans client externe.
-* [x] **Outils Requis** : On devra s'orienter vers des wrappers C pour `MuPDF` ou `poppler`, ou bien utiliser des libs natives Go partielles (ex: `pdfcpu` ou `unidoc` si les licences sont viables).
+* [x] **Outils Requis** : On devra s'orienter vers des wrappers C pour `MuPDF` ou `poppler` (via lib/exec `pdftoppm`), ou bien utiliser des libs natives Go partielles (ex: `ledongthuc/pdf` pour metadata).
 
 ---
 

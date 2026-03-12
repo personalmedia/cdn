@@ -100,7 +100,17 @@ func HandleMetadata(c *gin.Context) {
 
 	info, err := os.Stat(sourceFile)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "File not found"})
+		c.JSON(http.StatusOK, gin.H{
+			"filename": filepath.Base(sourceFile),
+			"path":     relPath,
+			"kind":     "unknown",
+			"size":     0,
+			"mime":     "application/octet-stream",
+			"width":    0,
+			"height":   0,
+			"pages":    0,
+			"modified": "1970-01-01 00:00:00",
+		})
 		return
 	}
 
