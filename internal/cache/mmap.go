@@ -24,7 +24,7 @@ var (
 
 func initMmap() {
 	var err error
-	mmapLRU, err = lru.NewWithEvict[string, *MappedFile](config.App.MMapCacheCap, func(_ string, mf *MappedFile) {
+	mmapLRU, err = lru.NewWithEvict(config.App.MMapCacheCap, func(_ string, mf *MappedFile) {
 		if mf != nil && mf.data != nil {
 			_ = mf.data.Unmap()
 		}

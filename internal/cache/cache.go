@@ -113,11 +113,12 @@ func LoadSourceImage(path string, reqW, reqH, reqPage int) (image.Image, error) 
 	var cacheKey string
 	ext := strings.ToLower(filepath.Ext(path))
 
-	if ext == ".svg" {
+	switch ext {
+	case ".svg":
 		cacheKey = fmt.Sprintf("%s@%dx%d", path, reqW, reqH)
-	} else if ext == ".pdf" {
+	case ".pdf":
 		cacheKey = fmt.Sprintf("%s@p%d", path, reqPage)
-	} else {
+	default:
 		cacheKey = path
 	}
 
@@ -133,17 +134,18 @@ func LoadSourceImage(path string, reqW, reqH, reqPage int) (image.Image, error) 
 
 	var img image.Image
 
-	if ext == ".svg" {
+	switch ext {
+	case ".svg":
 		img, err = loadSVGAsImage(path, reqW, reqH)
 		if err != nil {
 			return nil, err
 		}
-	} else if ext == ".pdf" {
+	case ".pdf":
 		img, err = GeneratePDFCover(path, reqPage)
 		if err != nil {
 			return nil, err
 		}
-	} else {
+	default:
 		f, err := os.Open(path)
 		if err != nil {
 			return nil, err
