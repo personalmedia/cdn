@@ -27,10 +27,10 @@ func Start() error {
 
 	r.GET("/metadata/*path", HandleMetadata)
 
-	r.GET("/cdn/*path", RouteProcessor)
+	r.GET(config.App.CDNPath+"/*path", RouteProcessor)
 	r.GET("/o/:action/*path", RouteProcessor)
 
-	// Compat vieux format
+	// Compat vieux format (legacy)
 	r.GET("/:action/*path", func(c *gin.Context) {
 		if c.Param("action") == "metadata" {
 			c.AbortWithStatus(404)

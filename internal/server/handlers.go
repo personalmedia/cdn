@@ -28,11 +28,30 @@ var extensionKind = map[string]string{
 
 func RouteProcessor(c *gin.Context) {
 	var actionName, relPath string
+	var rawPath string
 
-	if strings.HasPrefix(c.Request.URL.Path, "/cdn/") {
-		rawPath := c.Param("path")
+	cdnPathPrefix := config.App.CDNPath
+	if !strings.HasSuffix(cdnPathPrefix, "/") {
+		cdnPathPrefix += "/"
+	}
+
+	if strings.HasPrefix(c.Request.URL.Path, cdnPathPrefix) {
+		rawPath = c.Param("path")
+	} else if actionParam := c.Param("action"); actionParam != "" {
+		switch actionParam {
+		case "webp", "blur", "portrait", "resize", "csv", "json", "text":
+			actionName = actionParam
+			relPath = c.Param("path")
+		default:
+			rawPath = "/" + actionParam + c.Param("path")
+		}
+	} else {
+		rawPath = c.Param("path")
+	}
+
+	if rawPath != "" {
 		ext := strings.ToLower(filepath.Ext(rawPath))
-		
+
 		if ext == ".webp" || ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".gif" || ext == ".csv" || ext == ".json" || ext == ".txt" {
 			actionName = strings.TrimPrefix(ext, ".")
 			relPath = strings.TrimSuffix(rawPath, ext)
@@ -40,18 +59,12 @@ func RouteProcessor(c *gin.Context) {
 				actionName = "text"
 			}
 			if actionName == "jpg" || actionName == "jpeg" || actionName == "png" || actionName == "gif" {
-			     actionName = "resize" // standard resize if format is matching image output, we'll keep Action simple
-			     // if you specifically requested .webp, it's webp action. Else standard resize/encode to source type
+				actionName = "resize"
 			}
 		} else {
-             actionName = "resize"
-             relPath = rawPath
-             // implicitly an image proxy 
+			actionName = "resize"
+			relPath = rawPath
 		}
-
-	} else {
-		actionName = c.Param("action")
-		relPath = c.Param("path")
 	}
 
 	relPath, ok := processor.SanitizeRelativePath(relPath)

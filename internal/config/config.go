@@ -19,6 +19,7 @@ const (
 type AppConfig struct {
 	SourceDir      string
 	CacheBase      string
+	CDNPath        string
 	Port           string
 	RatePerSec     int
 	RateBurst      int
@@ -41,6 +42,7 @@ func Load() {
 	App = &AppConfig{
 		SourceDir:      filepath.Clean(getEnv("SOURCE_DIR", "/datamix/cdn")),
 		CacheBase:      filepath.Clean(getEnv("CACHE_BASE", "/cache")),
+		CDNPath:        getEnv("CDN_PATH", "/cdn"),
 		Port:           getEnv("PORT", "9999"),
 		RatePerSec:     getEnvInt("RATE_PER_SEC", 100),
 		RateBurst:      getEnvInt("RATE_BURST", 100),
