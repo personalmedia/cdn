@@ -24,6 +24,8 @@ var extensionKind = map[string]string{
 	".svg":  "image",
 	".pdf":  "image",
 	".xlsx": "excel",
+	".ttf":  "font",
+	".otf":  "font",
 }
 
 func RouteProcessor(c *gin.Context) {
@@ -94,7 +96,7 @@ func RouteProcessor(c *gin.Context) {
 	}
 
 	w, h, page, quality, filter := 0, 0, 1, 0, ""
-	if kind == "image" {
+	if kind == "image" || kind == "font" {
 		w, h, page, filter, quality = processor.ParseDims(c.Request.URL.RawQuery)
 	}
 
@@ -114,6 +116,8 @@ func RouteProcessor(c *gin.Context) {
 
 	if kind == "image" {
 		processor.HandleImageAction(c, req)
+	} else if kind == "font" {
+		processor.HandleFontAction(c, req)
 	} else if kind == "excel" {
 		if actionName == "csv" {
 			processor.HandleExcelCSV(c, req)

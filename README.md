@@ -6,7 +6,7 @@ A high-performance, secure asset transformation engine. It acts as a smart proxy
 
 ## ✨ New & Core Features
 
-* **Multimodal Processing**: Handles **Images** (Resize, WebP, Blur), **PDFs** (Page pixelization, Text extraction), and **Data** (Excel XLSX to CSV/JSON).
+* **Multimodal Processing**: Handles **Images** (Resize, WebP, Blur), **PDFs** (Page pixelization, Text extraction), **Data** (Excel XLSX to CSV/JSON), and **Fonts** (TTF/OTF to WebP previews).
 * **Zero-Error Fallbacks**: The engine guarantees safe frontend rendering by gracefully falling back to empty representations (placeholder images, empty arrays `[]`) instead of throwing 404/500 HTTP errors.
 * **Dual-Layer Resource Management**:
 * **Source Cache**: Keeps decoded images in memory to avoid redundant disk I/O.
@@ -56,6 +56,12 @@ RATE_PER_SEC=100
 * **Portrait Crop**: `GET /cdn/photo.jpg?400x400:portrait:q75` (Uses an optimized Top-anchor crop specifically designed to prioritize and frame faces/heads perfectly)
 * **Blur**: `GET /cdn/bg.jpg?1920x1080:blur:q60`
 * *Note: If the source is missing, a neutral placeholder is automatically generated. The legacy `/o/:action/*path` route remains supported.*
+
+### 🔤 Font Previews
+
+`GET /cdn/*path.ext`
+
+* **TTF/OTF to WebP**: `GET /cdn/fonts/Roboto-Regular.ttf.webp?800x400` (Generates an anti-aliased image displaying font samples with the specified dimensions).
 
 ### 📄 PDF Document Intelligence
 
