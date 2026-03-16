@@ -54,17 +54,17 @@ func RouteProcessor(c *gin.Context) {
 	if rawPath != "" {
 		ext := strings.ToLower(filepath.Ext(rawPath))
 
-		if ext == ".webp" || ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".gif" || ext == ".csv" || ext == ".json" || ext == ".txt" {
+		if ext == ".webp" || ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".gif" {
+			actionName = "auto"
+			relPath = rawPath
+		} else if ext == ".csv" || ext == ".json" || ext == ".txt" {
 			actionName = strings.TrimPrefix(ext, ".")
 			relPath = strings.TrimSuffix(rawPath, ext)
 			if actionName == "txt" {
 				actionName = "text"
 			}
-			if actionName == "jpg" || actionName == "jpeg" || actionName == "png" || actionName == "gif" {
-				actionName = "resize"
-			}
 		} else {
-			actionName = "resize"
+			actionName = "auto"
 			relPath = rawPath
 		}
 	}
@@ -78,7 +78,7 @@ func RouteProcessor(c *gin.Context) {
 	ext := strings.ToLower(filepath.Ext(relPath))
 	kind, ok := extensionKind[ext]
 	if !ok {
-		if actionName == "resize" || actionName == "webp" || actionName == "blur" || actionName == "portrait" {
+		if actionName == "resize" || actionName == "webp" || actionName == "blur" || actionName == "portrait" || actionName == "auto" {
 			kind = "image"
 		} else if actionName == "csv" || actionName == "json" {
 			kind = "excel"
@@ -96,8 +96,14 @@ func RouteProcessor(c *gin.Context) {
 	}
 
 	w, h, page, quality, filter := 0, 0, 1, 0, ""
+	var autoFormat, autoHash string
+
 	if kind == "image" || kind == "font" {
 		w, h, page, filter, quality = processor.ParseDims(c.Request.URL.RawQuery)
+	}
+	
+	if actionName == "auto" && kind == "image" {
+		w, h, autoFormat, quality, autoHash = processor.NegotiateParams(c.Request, w, h, quality, filter)
 	}
 
 	req := &processor.ActionRequest{
@@ -112,6 +118,8 @@ func RouteProcessor(c *gin.Context) {
 		Quality:    quality,
 		Filter:     filter,
 		Query:      c.Request.URL.RawQuery,
+		AutoFormat: autoFormat,
+		AutoHash:   autoHash,
 	}
 
 	if kind == "image" {

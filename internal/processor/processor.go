@@ -21,6 +21,8 @@ type ActionRequest struct {
 	Quality    int
 	Filter     string
 	Query      string
+	AutoFormat string
+	AutoHash   string
 }
 
 func SanitizeRelativePath(raw string) (string, bool) {

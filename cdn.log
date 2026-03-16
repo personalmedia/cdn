@@ -1,0 +1,5 @@
+2026/03/16 12:43:28.487549 /Users/user/cdn/internal/server/server.go:42: 🚀 Universal Transformer :8080 | Source: tests | Cache: cache | Workers: 4 | SourceLRU: 128
+[GIN] 2026/03/16 - 12:43:28 | 404 |   5.75µs |             ::1 | HEAD     "/cdn/test.png"
+[GIN] 2026/03/16 - 12:44:16 | 200 |   6.97ms |             ::1 | GET      "/cdn/test.png"
+[GIN] 2026/03/16 - 12:44:16 | 200 |   4.33ms |             ::1 | GET      "/cdn/test.png"
+[GIN] 2026/03/16 - 12:44:17 | 200 |   1.12ms |             ::1 | GET      "/cdn/test.png"

@@ -22,7 +22,7 @@ Où va-t-on à partir d'ici ? Voici les prochaines étapes logiques, allant d'op
 
 Ces améliorations sont prévues pour passer d'un simple "outil Go rapide" à de la "très haute performance".
 
-* [ ] **Zero-Copy Streaming** : Actuellement, le `mmap` cartographie le fichier en mémoire, mais le framework retransfère cette mémoire vers les sockets TCP. Avec Go 1.22+, il est possible d'utiliser `splice()` (Linux) ou `sendfile()` (MacOS/Linux) pour autoriser le kernel système à **copier directement la data du cache disque vers le socket réseau**, sans jamais transiter par la mémoire user-space du programme. C'est l'essence même d'un Nginx.
+* [x] **Zero-Copy Streaming** : Actuellement, le `mmap` cartographie le fichier en mémoire, mais le framework retransfère cette mémoire vers les sockets TCP. Avec Go 1.22+, il est possible d'utiliser `splice()` (Linux) ou `sendfile()` (MacOS/Linux) pour autoriser le kernel système à **copier directement la data du cache disque vers le socket réseau**, sans jamais transiter par la mémoire user-space du programme. C'est l'essence même d'un Nginx.
 * [ ] **SIMD Hardware Resizing** : Remplacer `disintegration/imaging` par des bindings sur des librairies C/C++ utilisant **AVX/SIMD** (ex: `bimg` avec libvips). Ceci réduirait l'usage CPU par 10 lors du redimensionnement d'images lourdes.
 * [ ] **Cache Collapsing & Clustering (Global Singleflight)** : L'implémentation de `singleflight` actuelle évite la répétition du calcul (cache stampede) localement sur un noeud serveur. Quid si on est derrière un Load Balancer sur 5 serveurs ? Le prochain défi est de distribuer cette ressource "en cours de création" via un système comme Redis Pub/Sub Lock.
 
@@ -55,7 +55,46 @@ Les PDF représentent un monde à part. Le but, ici, est l'extraction sémantiqu
 
 ---
 
-## ☁️ 4. Abstraction de l'Origine (Backend S3)
+## ☁️ 4. S3 Universel (Abstraction de l'Origine)
 
-* [ ] Actuellement, le CDN se base sur un **SourceDir** en *file system* local `/var/www/media`. 
-* [ ] **L'évolution finale** : Permettre à `SourceDir` d'accepter le schéma `s3://mon-bucket/` et charger dynamiquement, **streamer et mettre en cache** des objets depuis n'importe quel stockage compatible S3/R2/GCS, rendant notre CDN totalement `Stateless` côté Source. L'agent deviendra un proxy global *edge*.
+**Objectif** : Permettre à Datamix de lire les assets depuis le système de fichiers local ou n'importe quel stockage compatible S3 (AWS, Cloudflare R2, Backblaze B2, Wasabi, DigitalOcean Spaces, etc.) afin d'éviter le vendor lock-in et faciliter les architectures multi-cloud.
+
+* [ ] **Interface `SourceProvider`** : Créer l'interface standardisée (`Get`, `Exists`, `Stat`).
+* [ ] **Driver S3 Standard** : Intégrer `minio-go/v7` pour sa forte compatibilité et ses dépendances réduites.
+* [ ] **S3 Compatibility Layer** : Détection automatique et ajustement des spécificités du provider (ex: désactiver la région pour Cloudflare R2, forcer le path-style pour Scaleway).
+* [ ] **Zero-Buffer Streaming** : S'assurer que les objets S3 soient directement streamés de l'origine au pipeline (`S3 → io.Reader → transformer → cache`).
+
+---
+
+## 🧠 5. Mode CDN Intelligent (Auto-Optimization)
+
+**Objectif** : Permettre des requêtes sans paramètres explicites (`GET /cdn/photo.jpg`), dans lesquelles Datamix détermine automatiquement les meilleures transformations.
+
+* [ ] **Client Signals** : Détection de l'appareil et des capacités via les headers `Accept` (ex: `image/avif`, `image/webp`), `User-Agent`, `Viewport-Width`, `DPR`, `Save-Data`.
+* [ ] **Résolution Dynamique** : Algorithme calculant la taille idéale (ex: `width = viewport * DPR`, contraint entre 320 et 2400px).
+* [ ] **Négociation de Format** : Privilégier l'ordre de nouvelle génération (AVIF > WebP > JPEG > PNG).
+* [ ] **Quality Profiles Automatiques** : Paramétrage intelligent (ex: `Desktop -> q75`, `Mobile -> q65`, `Save-Data -> q40`).
+* [ ] **Variations de Cache** : La clé de cache doit intégrer le hash de l'ensemble de ces facteurs (`sha1(format+width+quality+filters)`).
+
+---
+
+## 🧬 6. CDN Programmable (WASM)
+
+**Objectif** : Permettre aux développeurs d'exécuter des transformations personnalisées compilées en WebAssembly (WASM), à la volée (`GET /cdn/photo.jpg?wasm=watermark`).
+
+* [ ] **WASM Runtime** : Intégrer un moteur d'exécution ultra-rapide comme `wasmtime` ou `wazero`.
+* [ ] **Standard WASM API** : Implémenter le passage du buffer d'image, des métadonnées et query parameters, et récupérer le buffer modifié (`Transform(input []byte) []byte`).
+* [ ] **Sécurité / Sandboxing** : Limite stricte de la mémoire allouée, timeout d'exécution, interdiction formelle d'accès au module réseau ou au système de fichiers local.
+* [ ] **Cas d'usage cibles** : Watermarks dynamiques, floutage automatique (visages, EXIFs), upscaling IA, anonymisation (PDF redaction), génération de thumbnails personnalisés.
+* [ ] **Invalidation de cache** : Intégrer le hash du module WASM dans la clé de variante du cache.
+
+---
+
+## 🌐 7. Extensions Futures (IPFS & Edge)
+
+* [ ] **Source IPFS** : Utiliser le protocole distribué IPFS comme `SourceProvider` additionnel.
+* [ ] **Video Transcoding** : Packages dynamiques HLS/DASH (comme vu à l'étape 2).
+* [ ] **Animation AVIF** : Prise en charge optimisée.
+* [ ] **Edge Cache Replication** : Synchronisation du cache entre noeuds distribués.
+
+> 💡 **La cible architecturale finale** : Avec **1️⃣ Le S3 Universel**, **2️⃣ Le CDN Intelligent**, **3️⃣ Le WASM Programmable** et **4️⃣ L'option IPFS**, le moteur passe du statut de simple "proxy image" à un véritable **moteur CDN programmable open-source** global.

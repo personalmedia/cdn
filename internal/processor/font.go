@@ -24,7 +24,7 @@ import (
 
 // HandleFontAction generates a WebP image preview of a font file.
 func HandleFontAction(c *gin.Context, req *ActionRequest) {
-	cacheFile := cache.CacheFileForImage(req.Action, req.RelPath, req.W, req.H, req.Page, req.Filter, req.Quality)
+	cacheFile := cache.CacheFileForImage(req.Action, req.RelPath, req.W, req.H, req.Page, req.Filter, req.Quality, req.AutoHash, req.AutoFormat)
 	mimeType := cache.DetectOutputMime(cacheFile)
 
 	if req.Action == "webp" || req.Action == "resize" {

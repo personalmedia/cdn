@@ -78,12 +78,17 @@ func NormalizedDimsFolder(w, h, page int, filter string, quality int) string {
 	return base
 }
 
-func CacheFileForImage(action, relPath string, w, h, page int, filter string, quality int) string {
+func CacheFileForImage(action, relPath string, w, h, page int, filter string, quality int, autoHash, autoFormat string) string {
 	folder := NormalizedDimsFolder(w, h, page, filter, quality)
+	if action == "auto" && autoHash != "" {
+		folder = autoHash
+	}
 	cacheFile := filepath.Join(config.App.CacheBase, action, folder, relPath)
 
 	if action == "webp" && !strings.HasSuffix(strings.ToLower(cacheFile), ".webp") {
 		cacheFile += ".webp"
+	} else if action == "auto" && autoFormat != "" && !strings.HasSuffix(strings.ToLower(cacheFile), "."+autoFormat) {
+		cacheFile += "." + autoFormat
 	}
 	return cacheFile
 }

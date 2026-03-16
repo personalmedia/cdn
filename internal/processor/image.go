@@ -27,6 +27,7 @@ type ProcessorFunc func(img image.Image, w, h int) image.Image
 var ImageProcessors = map[string]ProcessorFunc{
 	"resize":   processResize,
 	"webp":     processResize,
+	"auto":     processResize,
 	"blur":     processBlur,
 	"portrait": ProcessPortraitWithFaceDetect,
 }
@@ -47,10 +48,10 @@ func HandleImageAction(c *gin.Context, req *ActionRequest) {
 		proc = processResize
 	}
 
-	cacheFile := cache.CacheFileForImage(req.Action, req.RelPath, req.W, req.H, req.Page, req.Filter, req.Quality)
+	cacheFile := cache.CacheFileForImage(req.Action, req.RelPath, req.W, req.H, req.Page, req.Filter, req.Quality, req.AutoHash, req.AutoFormat)
 	mimeType := cache.DetectOutputMime(cacheFile)
 
-	if req.Action == "webp" {
+	if req.Action == "webp" || (req.Action == "auto" && req.AutoFormat == "webp") {
 		mimeType = "image/webp"
 	} else if strings.HasSuffix(strings.ToLower(cacheFile), ".pdf") {
 		mimeType = "image/png"
@@ -60,6 +61,8 @@ func HandleImageAction(c *gin.Context, req *ActionRequest) {
 		pattern := filepath.Join(config.App.CacheBase, req.Action, "*", req.RelPath)
 		if req.Action == "webp" {
 			pattern += ".webp"
+		} else if req.Action == "auto" && req.AutoFormat != "" {
+			pattern += "." + req.AutoFormat
 		}
 		if matches, _ := filepath.Glob(pattern); len(matches) >= config.MaxCacheVariants {
 			c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{
@@ -110,7 +113,7 @@ func HandleImageAction(c *gin.Context, req *ActionRequest) {
 			return nil, err
 		}
 
-		if req.Action == "webp" {
+		if req.Action == "webp" || (req.Action == "auto" && req.AutoFormat == "webp") {
 			buf := new(bytes.Buffer)
 
 			q := 75
