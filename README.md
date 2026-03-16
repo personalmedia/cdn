@@ -8,9 +8,9 @@ A high-performance, secure asset transformation engine. It acts as a smart proxy
 
 * **Multimodal Processing**: Handles **Images** (Resize, WebP, Blur), **PDFs** (Page pixelization, Text extraction), and **Data** (Excel XLSX to CSV/JSON).
 * **Zero-Error Fallbacks**: The engine guarantees safe frontend rendering by gracefully falling back to empty representations (placeholder images, empty arrays `[]`) instead of throwing 404/500 HTTP errors.
-* **Dual-Layer LRU Cache**:
+* **Dual-Layer Resource Management**:
 * **Source Cache**: Keeps decoded images in memory to avoid redundant disk I/O.
-* **MMap Cache**: Uses `mmap-go` to map hot cache files directly into memory address space for near-zero latency delivery.
+* **Zero-Copy Streaming**: Leverages native kernel-level `sendfile`/`splice` syscalls to stream cached files directly from disk to the network socket, completely circumventing user-space memory boundaries.
 
 
 * **Worker Pool & Rate Limiting**: Strict CPU limiting for heavy tasks and built-in IP-based protection.
@@ -25,7 +25,6 @@ go get github.com/gin-gonic/gin
 go get github.com/disintegration/imaging
 go get github.com/xuri/excelize/v2
 go get github.com/hashicorp/golang-lru/v2
-go get github.com/edsrzf/mmap-go
 
 ```
 
@@ -37,9 +36,9 @@ CACHE_BASE=/var/www/cache
 PORT=9999
 
 # Advanced Tuning
+CDN_PATH=/cdn          # Base path prefix
 WORKERS=8              # Max concurrent processing
 SOURCE_CACHE_CAP=512   # Number of decoded source images in RAM
-MMAP_CACHE_CAP=256     # Number of memory-mapped files
 RATE_PER_SEC=100
 
 ```
@@ -122,6 +121,6 @@ The cache is structured for easy maintenance:
 * **Excel Zip Bomb Defense**: Enforces a strict XML decompression size limit (250MB) on XLSX files to prevent memory exhaustion.
 * **Rate Limiting & IP Spoofing**: IP-based rate limiter with support for `TRUSTED_PROXIES` behind load balancers.
 * **Security Headers**: Injects `X-Content-Type-Options: nosniff` and `X-Frame-Options: DENY`.
-* **MMap Efficiency**: Cached files are served via memory mapping, reducing system calls and memory copying.
+* **Zero-Copy Streaming**: Cached files are served directly via proxy to socket, eliminating memory copying via `http.ServeFile` kernel optimizations.
 * **Aggressive Caching**: Headers include `public, max-age=31536000, immutable`.
 * **Centralized Logging**: Clean stdout formatting and automatic concurrent persistence inside `CDN_LOG_FILE` utilizing `l3dlp/logfile`.

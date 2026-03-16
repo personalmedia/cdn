@@ -8,9 +8,9 @@ Un moteur de transformation d'actifs ultra-performant et sécurisé. Conçu pour
 
 * **Traitement Multimodal** : Gère désormais les **Images** (Resize, WebP, Blur), les **PDFs** (Pixellisation par page, Extraction de texte) et les **Données** (Excel vers CSV/JSON).
 * **Robustesse "Zero-Errors"** : Le moteur garantit un rendu client ininterrompu en substituant de manière transparente toute erreur technique (404/500) par des représentations vides et saines (image grise, ou tableau `[]` vide JSON).
-* **Double Cache LRU (In-Memory)** :
+* **Gestion des Ressources Double-Couche** :
 * **Source Cache** : Conserve les images décodées en RAM pour éviter les lectures disque répétitives.
-* **MMap Cache** : Utilise `mmap-go` pour mapper les fichiers du cache directement dans l'espace d'adressage mémoire (latence quasi nulle).
+* **Zero-Copy Streaming** : Exploite nativement les appels systèmes du kernel (`sendfile`/`splice`) pour streamer les fichiers du cache directement du disque vers le socket TCP sans jamais transiter par la mémoire user-space.
 
 
 * **Pool de Workers & Rate Limiting** : Limitation stricte de l'usage CPU pour les tâches lourdes et protection par IP intégrée.
@@ -25,7 +25,6 @@ go get github.com/gin-gonic/gin
 go get github.com/disintegration/imaging
 go get github.com/xuri/excelize/v2
 go get github.com/hashicorp/golang-lru/v2
-go get github.com/edsrzf/mmap-go
 
 ```
 
@@ -37,9 +36,9 @@ CACHE_BASE=/var/www/cache
 PORT=9999
 
 # Paramétrage Avancé
+CDN_PATH=/o            # Préfixe de l'URL du CDN
 WORKERS=8              # Max de processus de traitement simultanés
 SOURCE_CACHE_CAP=512   # Nb d'images sources gardées en RAM
-MMAP_CACHE_CAP=256     # Nb de fichiers mappés en mémoire
 RATE_PER_SEC=100       # Limite de requêtes par IP
 
 ```
@@ -125,6 +124,6 @@ Le cache est organisé par action et dimensions pour permettre des purges chirur
 * **Défense Excel Zip Bomb** : Limite stricte de la taille de décompression XML (250MB) pour les fichiers XLSX.
 * **Rate Limiting & IP Spoofing** : Limiteur de requêtes par IP avec support de `TRUSTED_PROXIES` pour les configurations derrière inverse-proxy.
 * **Headers de Sécurité** : Injection automatique de `X-Content-Type-Options: nosniff` et `X-Frame-Options: DENY`.
-* **Efficacité MMap** : Les fichiers du cache sont servis via mapping mémoire, réduisant les appels système et les copies de données.
+* **Zero-Copy Streaming** : Les fichiers du cache sont servis de manière native via le kernel, réduisant drastiquement l'usage mémoire et processeur (`http.ServeFile` natif).
 * **Cache-Control Agressif** : Les assets sont servis avec `public, max-age=31536000, immutable`.
 * **Journalisation Centralisée (Logging)** : Formatage clair sur stdout et persistance concurrente automatique dans `CDN_LOG_FILE` (basé sur le package `l3dlp/logfile`).
