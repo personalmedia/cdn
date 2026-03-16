@@ -40,13 +40,12 @@ func Start() error {
 	})
 
 	log.Printf(
-		"🚀 Universal Transformer :%s | Source: %s | Cache: %s | Workers: %d | SourceLRU: %d | MMapLRU: %d\n",
+		"🚀 Universal Transformer :%s | Source: %s | Cache: %s | Workers: %d | SourceLRU: %d\n",
 		config.App.Port,
 		config.App.SourceDir,
 		config.App.CacheBase,
 		config.App.Workers,
 		config.App.SourceCacheCap,
-		config.App.MMapCacheCap,
 	)
 
 	return r.Run(":" + config.App.Port)

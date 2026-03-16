@@ -56,8 +56,6 @@ func HandlePDFText(c *gin.Context, req *ActionRequest) {
 			return nil, err
 		}
 
-		cache.InvalidateMappedFile(cacheFile)
-
 		return &cache.BuildResult{
 			CacheFile: cacheFile,
 			MimeType:  mimeType,

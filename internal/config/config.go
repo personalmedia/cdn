@@ -27,7 +27,6 @@ type AppConfig struct {
 	IPGCMinutes    int
 	Workers        int
 	SourceCacheCap int
-	MMapCacheCap   int
 	TrustedProxies []string
 	LogFile        string
 }
@@ -50,7 +49,6 @@ func Load() {
 		IPGCMinutes:    getEnvInt("IP_GC_MINUTES", 5),
 		Workers:        getEnvInt("WORKERS", runtime.NumCPU()),
 		SourceCacheCap: getEnvInt("SOURCE_CACHE_CAP", 512),
-		MMapCacheCap:   getEnvInt("MMAP_CACHE_CAP", 256),
 		LogFile:        filepath.Clean(getEnv("CDN_LOG_FILE", "/var/log/cdn.log")),
 	}
 
@@ -59,9 +57,6 @@ func Load() {
 	}
 	if App.SourceCacheCap < 1 {
 		App.SourceCacheCap = 1
-	}
-	if App.MMapCacheCap < 1 {
-		App.MMapCacheCap = 1
 	}
 
 	proxies := getEnv("TRUSTED_PROXIES", "")

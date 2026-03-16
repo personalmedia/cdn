@@ -46,7 +46,6 @@ func Init() {
 	if err != nil {
 		panic(err)
 	}
-	initMmap()
 }
 
 func FileExists(filename string) bool {

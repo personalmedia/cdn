@@ -53,11 +53,6 @@ func ServeNotModifiedOrMappedOrFile(c *gin.Context, filename, mimeType string) b
 		return true
 	}
 
-	if data, ok, err := GetMappedFile(filename, mimeType); err == nil && ok {
-		c.Data(http.StatusOK, mimeType, data)
-		return true
-	}
-
 	http.ServeFile(c.Writer, c.Request, filename)
 	return true
 }
@@ -96,8 +91,6 @@ func GenerateCached(c *gin.Context, cacheFile, mimeType string, fallback []byte,
 		if err := os.WriteFile(cacheFile, data, 0o644); err != nil {
 			return nil, err
 		}
-
-		InvalidateMappedFile(cacheFile)
 
 		return &BuildResult{
 			CacheFile: cacheFile,

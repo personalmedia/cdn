@@ -125,8 +125,6 @@ func HandleImageAction(c *gin.Context, req *ActionRequest) {
 				return nil, err
 			}
 
-			cache.InvalidateMappedFile(cacheFile)
-
 			return &cache.BuildResult{
 				CacheFile: cacheFile,
 				MimeType:  mimeType,
@@ -154,8 +152,6 @@ func HandleImageAction(c *gin.Context, req *ActionRequest) {
 		if saveErr != nil {
 			return nil, saveErr
 		}
-
-		cache.InvalidateMappedFile(cacheFile)
 
 		return &cache.BuildResult{
 			CacheFile: cacheFile,
