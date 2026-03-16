@@ -26,6 +26,7 @@ var extensionKind = map[string]string{
 	".xlsx": "excel",
 	".ttf":  "font",
 	".otf":  "font",
+	".md":   "markdown",
 }
 
 func RouteProcessor(c *gin.Context) {
@@ -57,7 +58,13 @@ func RouteProcessor(c *gin.Context) {
 		if ext == ".webp" || ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".gif" {
 			actionName = "auto"
 			relPath = rawPath
-		} else if ext == ".csv" || ext == ".json" || ext == ".txt" {
+		} else if strings.HasSuffix(strings.ToLower(rawPath), ".md.pdf") {
+			actionName = "pdf"
+			relPath = strings.TrimSuffix(rawPath, ".pdf")
+		} else if strings.HasSuffix(strings.ToLower(rawPath), ".pdf.md") {
+			actionName = "md"
+			relPath = strings.TrimSuffix(rawPath, ".md")
+		} else if ext == ".csv" || ext == ".json" || ext == ".txt" || ext == ".md" {
 			actionName = strings.TrimPrefix(ext, ".")
 			relPath = strings.TrimSuffix(rawPath, ext)
 			if actionName == "txt" {
@@ -90,9 +97,13 @@ func RouteProcessor(c *gin.Context) {
 		}
 	}
 
-	// Override kind if requesting text extraction specifically
+	// Override kind if requesting specific extractions
 	if actionName == "text" && ext == ".pdf" {
 		kind = "pdf"
+	} else if actionName == "md" && ext == ".pdf" {
+		kind = "pdf"
+	} else if actionName == "pdf" && ext == ".md" {
+		kind = "markdown"
 	}
 
 	w, h, page, quality, filter := 0, 0, 1, 0, ""
@@ -101,7 +112,7 @@ func RouteProcessor(c *gin.Context) {
 	if kind == "image" || kind == "font" {
 		w, h, page, filter, quality = processor.ParseDims(c.Request.URL.RawQuery)
 	}
-	
+
 	if actionName == "auto" && kind == "image" {
 		w, h, autoFormat, quality, autoHash = processor.NegotiateParams(c.Request, w, h, quality, filter)
 	}
@@ -136,6 +147,10 @@ func RouteProcessor(c *gin.Context) {
 		}
 	} else if kind == "pdf" && actionName == "text" {
 		processor.HandlePDFText(c, req)
+	} else if kind == "pdf" && actionName == "md" {
+		processor.HandlePDFMarkdown(c, req)
+	} else if kind == "markdown" && actionName == "pdf" {
+		processor.HandleMarkdownPDF(c, req)
 	} else {
 		c.AbortWithStatus(http.StatusUnsupportedMediaType)
 	}
