@@ -6,7 +6,7 @@ Un moteur de transformation d'actifs ultra-performant et sécurisé. Conçu pour
 
 ## ✨ Nouvelles Fonctionnalités & Points Forts
 
-* **Traitement Multimodal** : Gère désormais les **Images** (Resize, WebP, Blur), les **PDFs** (Pixellisation par page, Extraction de texte), les **Données** (Excel vers CSV/JSON) et les **Polices** (Aperçu WebP depuis TTF/OTF).
+* **Traitement Multimodal** : Gère désormais les **Images** (Resize, WebP, Blur), les **PDFs** (Pixellisation par page, Extraction de texte) et les **Données** (Excel vers CSV/JSON).
 * **Robustesse "Zero-Errors"** : Le moteur garantit un rendu client ininterrompu en substituant de manière transparente toute erreur technique (404/500) par des représentations vides et saines (image grise, ou tableau `[]` vide JSON).
 * **Gestion des Ressources Double-Couche** :
 * **Source Cache** : Conserve les images décodées en RAM pour éviter les lectures disque répétitives.
@@ -56,12 +56,6 @@ RATE_PER_SEC=100       # Limite de requêtes par IP
 * **Portrait (Faces)** : `GET /cdn/photo.jpg?400x400:portrait:q75` (Utilise un point d'ancrage "Top" optimisé spécifiquement pour garantir que les visages ne soient jamais coupés)
 * **Flou (Blur)** : `GET /cdn/bg.jpg?1920x1080:blur:q60`
 * *Note : Si le fichier source est absent, un placeholder gris neutre est généré automatiquement. L'ancienne syntaxe `/o/:action/*path` reste supportée.*
-
-### 🔤 Aperçus de Polices (Fonts)
-
-`GET /cdn/*path.ext`
-
-* **TTF/OTF vers WebP** : `GET /cdn/fonts/Roboto-Regular.ttf.webp?800x400` (Génère une image lissée affichant un aperçu complet des caractères de la police aux dimensions spécifiées).
 
 ### 📄 Document Intelligence (PDF)
 
