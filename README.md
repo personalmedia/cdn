@@ -1,126 +1,88 @@
-# 🚀 Datamix Universal Transformer (Go-Gin Edition)
-
 🇬🇧 English | 🇫🇷 [Français](README.fr.md)
 
-A high-performance, secure asset transformation engine. It acts as a smart proxy to turn any static storage into a modern CDN capable of real-time image processing and **dynamic data conversion (Excel to JSON/CSV)**.
+# Transmuter
 
-## ✨ New & Core Features
+Turn anything into anything.
 
-* **Multimodal Processing**: Handles **Images** (Resize, WebP, Blur), **PDFs** (Page pixelization, Text extraction), and **Data** (Excel XLSX to CSV/JSON).
-* **Zero-Error Fallbacks**: The engine guarantees safe frontend rendering by gracefully falling back to empty representations (placeholder images, empty arrays `[]`) instead of throwing 404/500 HTTP errors.
-* **Dual-Layer Resource Management**:
-* **Source Cache**: Keeps decoded images in memory to avoid redundant disk I/O.
-* **Zero-Copy Streaming**: Leverages native kernel-level `sendfile`/`splice` syscalls to stream cached files directly from disk to the network socket, completely circumventing user-space memory boundaries.
+Not an API. A transformation language.
 
+---
 
-* **Worker Pool & Rate Limiting**: Strict CPU limiting for heavy tasks and built-in IP-based protection.
-* **Anti-Cache Stampede**: Uses `singleflight` to ensure a resource is generated only once, even under massive concurrent hits.
-* **Smart ETag & 304**: Native support for `If-None-Match` and `If-Modified-Since` to save bandwidth.
+## Example
 
-## 🛠️ Installation
+/transmute/photo.jpg?800x600  
+/transmute/photo.jpg.webp?0x0:q80  
+/transmute/document.pdf.txt  
+/transmute/data.xlsx.csv  
 
-1. **Dependencies**
-```bash
-go get github.com/gin-gonic/gin
-go get github.com/disintegration/imaging
-go get github.com/xuri/excelize/v2
-go get github.com/hashicorp/golang-lru/v2
+---
 
-```
+## What it is
 
+Transmuter transforms any file on the fly:
 
-2. **Configuration (`.env`)**
-```env
-SOURCE_DIR=/var/www/media
-CACHE_BASE=/var/www/cache
-PORT=9999
+- Images → resize, crop, blur, WebP  
+- PDFs → render, extract text  
+- Excel → CSV / JSON  
 
-# Advanced Tuning
-CDN_PATH=/cdn          # Base path prefix
-WORKERS=8              # Max concurrent processing
-SOURCE_CACHE_CAP=512   # Number of decoded source images in RAM
-RATE_PER_SEC=100
+One syntax. One engine.
 
-```
+---
 
+## How it works
 
+/transmute/*path.ext?{operations}
 
-## 📖 Usage
+Chain operations with `:`.  
+Same input → same output.
 
-### 🖼️ Image Processing
+---
 
-`GET /cdn/*path.ext?{width}x{height}:{filter}:{quality}`
+## Why
 
-* **WebP Conversion**: `GET /cdn/photo.jpg.webp?0x0:q80` (Original size, 80% compression)
-* **Resize & Smart Crop**: `GET /cdn/photo.png?800x600` (Automatically detects subjects and uses content-aware smart cropping when aspect ratios change)
-* **Portrait Crop**: `GET /cdn/photo.jpg?400x400:portrait:q75` (Uses an optimized Top-anchor crop specifically designed to prioritize and frame faces/heads perfectly)
-* **Blur**: `GET /cdn/bg.jpg?1920x1080:blur:q60`
-* *Note: If the source is missing, a neutral placeholder is automatically generated. The legacy `/o/:action/*path` route remains supported.*
+Most tools do one thing.
 
-### 📄 PDF Document Intelligence
+Transmuter does everything.
 
-`GET /cdn/*path.ext`
+- No Cloudinary  
+- No converters  
+- No pipelines to glue together  
 
-* **PDF Page Render**: `GET /cdn/document.pdf.jpg?800x600:2` (Rasterizes specific page 2 of the document seamlessly).
-* **Text Extraction**: `GET /cdn/document.pdf.txt` (Extracts plain text representations of PDFs for indexing).
+---
 
-### 📊 Excel Transformation
+## Core
 
-`GET /cdn/*path.ext`
+input → fetch → validate → transform → cache → output
 
-* **Excel to CSV**: `GET /cdn/data/report.xlsx.csv` (Extracts the first sheet).
-* **Excel to JSON**: `GET /cdn/data/report.xlsx.json` (Extracts all sheets into a keyed object).
+Stateless. Deterministic. Fast.
 
-### 🔍 Metadata
+---
 
-`GET /metadata/*path`
-Returns a JSON summary: dimensions (for images), file size, MIME type, total pages (for PDFs) and last modified date.
+## Features
 
-## 🔗 Infrastructure Integration (Caddy)
+- Zero-copy streaming  
+- Worker pool  
+- Anti-cache stampede  
+- Smart ETag / 304  
+- Rate limiting  
+- Secure by default  
 
-```caddy
-cdn.example.com {
-    # Route all transformation requests to the Go engine
-    handle_path /o/* {
-        reverse_proxy localhost:9999
-    }
+---
 
-    # Metadata endpoint
-    handle_path /metadata/* {
-        reverse_proxy localhost:9999
-    }
+## Philosophy
 
-    # Serve original assets directly for everything else
-    root * /var/www/media
-    file_server
-}
+Every input is hostile.  
+Every transformation is explicit.  
+Every output is predictable.
 
-```
+---
 
-## 📂 Cache Architecture
+## Status
 
-The cache is structured for easy maintenance:
+WIP. Core is solid.
 
-```text
-/cache
-├── webp/
-│   └── 800x600/      # Resized WebP images
-├── csv/
-│   └── data/         # Generated CSV files from Excel
-└── json/
-    └── data/         # Generated JSON files from Excel
+---
 
-```
+## License
 
-## 🛡️ Security & Performance
-
-* **Strict Path Traversal Protection**: Validates final absolute paths post-`Join` to ensure isolation within `SOURCE_DIR`.
-* **Image Bomb Mitigation**: Reads image headers to enforce a strict dimension limit (e.g., 8000x8000) before full RAM decoding.
-* **CPU Exhaustion Protection**: Clamps user-requested dimensions to a safe maximum (e.g., 4000x4000) during resizing.
-* **Cache Flooding Prevention**: Limits the number of generated cache variants per image (e.g., max 20) to prevent disk fill attacks.
-* **Excel Zip Bomb Defense**: Enforces a strict XML decompression size limit (250MB) on XLSX files to prevent memory exhaustion.
-* **Rate Limiting & IP Spoofing**: IP-based rate limiter with support for `TRUSTED_PROXIES` behind load balancers.
-* **Security Headers**: Injects `X-Content-Type-Options: nosniff` and `X-Frame-Options: DENY`.
-* **Zero-Copy Streaming**: Cached files are served directly via proxy to socket, eliminating memory copying via `http.ServeFile` kernel optimizations.
-* **Aggressive Caching**: Headers include `public, max-age=31536000, immutable`.
-* **Centralized Logging**: Clean stdout formatting and automatic concurrent persistence inside `CDN_LOG_FILE` utilizing `l3dlp/logfile`.
+MIT
